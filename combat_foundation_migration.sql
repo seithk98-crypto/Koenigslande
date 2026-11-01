@@ -23,9 +23,20 @@ set speed_minutes_per_field = case code
   else speed_minutes_per_field
 end;
 
-alter table public.unit_types
-  add constraint unit_types_speed_minutes_per_field_check
-  check (speed_minutes_per_field > 0);
+do $
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'unit_types_speed_minutes_per_field_check'
+      and conrelid = 'public.unit_types'::regclass
+  ) then
+    alter table public.unit_types
+      add constraint unit_types_speed_minutes_per_field_check
+      check (speed_minutes_per_field > 0);
+  end if;
+end
+$;
 
 -- Eine Zeile pro Reisebewegung. Truppen werden beim Start serverseitig
 -- aus dem Ursprungsdorf abgezogen; die Einheiten werden separat gespeichert.
