@@ -288,7 +288,7 @@ function App() {
 
     setBusy(true)
     setMessage(`Ausbildung von ${quantity} ${unit.name} wird gestartet ...`)
-    const { data, error } = await supabase.rpc('start_recruitment', {
+    const { error } = await supabase.rpc('start_recruitment', {
       p_unit_code: unit.code,
       p_quantity: quantity,
     })
