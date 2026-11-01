@@ -492,3 +492,31 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+
+.training-order {
+  margin-top: 16px;
+  padding: 14px;
+  background: #191711;
+  border: 1px solid #51432b;
+  border-radius: 4px;
+}
+
+.training-order-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #e6d1a8;
+  font-size: 13px;
+}
+
+.training-order-heading span {
+  color: #c5a566;
+  font-size: 11px;
+}
+
+.training-order p {
+  margin: 8px 0;
+}
