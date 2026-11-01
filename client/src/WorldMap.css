@@ -1,17 +1,61 @@
 .world-map-view { margin-top: 10px; }
 .world-map-intro, .map-stage-note { color: #aaa18e; font-size: 13px; line-height: 1.6; }
 .world-map-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(230px, 1fr); gap: 18px; align-items: start; }
-.world-map-board { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; padding: 8px; background: #171711; border: 1px solid #675333; border-radius: 6px; box-shadow: 0 8px 25px #0005; }
-.world-map-cell { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; background: linear-gradient(145deg, #59613a, #3c492e); border: 1px solid #697147; border-radius: 3px; }
-.world-map-cell:nth-child(odd) { background: linear-gradient(145deg, #505b35, #35442b); }
-.world-map-cell.home-cell { background: linear-gradient(145deg, #77633b, #4e4028); border-color: #c09a55; }
-.world-map-cell.occupied-cell { background: linear-gradient(145deg, #666044, #45412e); }
-.map-village { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 100%; height: 100%; padding: 2px; color: #f0dfb9; background: transparent; border: 2px solid transparent; border-radius: 4px; }
-.map-village span { font-size: clamp(16px, 3vw, 27px); line-height: 1.15; filter: drop-shadow(0 2px 2px #0008); }
-.map-village small { font-size: clamp(7px, 1vw, 10px); font-weight: 700; text-shadow: 0 1px 3px #000; }
+
+/* Versetzte Sechsecke statt eines quadratischen Rasters */
+.world-map-board {
+  --hex-gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  padding: 18px 12px 22px;
+  background:
+    radial-gradient(ellipse at center, #53603b 0%, #35432c 68%, #22291d 100%);
+  border: 1px solid #75613a;
+  border-radius: 8px;
+  box-shadow: inset 0 0 35px #0006, 0 8px 25px #0005;
+}
+.world-map-row {
+  display: flex;
+  gap: var(--hex-gap);
+  width: 100%;
+  margin-top: -10px;
+}
+.world-map-row:first-child { margin-top: 0; }
+.world-map-row.offset-row { padding-left: 5.55%; }
+.world-map-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1.12 / 1;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #66744a, #465638);
+  border: 1px solid #7c8956;
+  clip-path: polygon(25% 2%, 75% 2%, 100% 50%, 75% 98%, 25% 98%, 0 50%);
+  filter: drop-shadow(0 2px 1px #1119);
+}
+.world-map-cell:nth-child(odd) { background: linear-gradient(145deg, #5b6b42, #3d5033); }
+.world-map-cell.home-cell { background: linear-gradient(145deg, #a1844b, #67502e); }
+.world-map-cell.occupied-cell { background: linear-gradient(145deg, #81734e, #554a32); }
+.map-village {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  color: #f0dfb9;
+  background: transparent;
+  border: 0;
+}
+.map-village span { font-size: clamp(15px, 2.5vw, 27px); line-height: 1.1; filter: drop-shadow(0 2px 2px #0009); }
+.map-village small { font-size: clamp(7px, .9vw, 10px); font-weight: 700; text-shadow: 0 1px 3px #000; }
 button.map-village { cursor: pointer; }
-button.map-village:hover, button.map-village.selected { background: #d2b16a33; border-color: #f0d18c; }
-.map-empty-mark { color: #b7c18a88; font-size: 20px; }
+button.map-village:hover, button.map-village.selected { background: #f4d58b44; outline: 2px solid #f0d18c; outline-offset: -7px; }
+.map-empty-mark { color: #d4dfb088; font-size: 20px; }
 .world-map-side { display: grid; gap: 14px; }
 .map-legend, .map-details { padding: 16px; background: #252016; border: 1px solid #57472e; border-radius: 5px; }
 .map-legend h3, .map-details h3 { margin: 0 0 12px; color: #e8d5ad; font-size: 16px; }
@@ -19,4 +63,9 @@ button.map-village:hover, button.map-village.selected { background: #d2b16a33; b
 .map-legend p span { display: inline-block; width: 28px; font-size: 17px; }
 .map-details .map-village-type { color: #d4b36e; font-weight: 700; }
 .map-stage-note { margin-top: 18px; padding: 12px 14px; background: #252016; border-left: 3px solid #927344; }
-@media (max-width: 760px) { .world-map-layout { grid-template-columns: 1fr; } .world-map-board { gap: 2px; padding: 4px; } }
+@media (max-width: 760px) {
+  .world-map-layout { grid-template-columns: 1fr; }
+  .world-map-board { padding: 14px 6px 18px; }
+  .world-map-row { margin-top: -6px; }
+  .world-map-row:first-child { margin-top: 0; }
+}
