@@ -22,7 +22,7 @@ begin
     into v_player_id, v_world_id
   from public.players p
   where p.profile_id = auth.uid()
-  order by p.created_at
+  order by p.id
   limit 1;
 
   if not found then
