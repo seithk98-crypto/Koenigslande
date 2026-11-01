@@ -57,6 +57,38 @@ type Construction = {
   status: string
 }
 
+type Unit = {
+  code: string
+  name: string
+  required_building_code: string
+  required_building_level: number
+  wood_cost: number
+  clay_cost: number
+  iron_cost: number
+  population_cost: number
+  build_seconds: number
+  attack: number
+  defense_infantry: number
+  defense_cavalry: number
+  carry_capacity: number
+  quantity: number
+  current_building_level: number
+}
+
+type Training = {
+  id: string
+  unit_code: string
+  quantity: number
+  started_at: string
+  completes_at: string
+  status: string
+}
+
+type MilitaryState = {
+  units: Unit[]
+  training_queue: Training[]
+}
+
 type VillageState = {
   village: Village
   resources: Resources & {
@@ -106,6 +138,9 @@ function formatNumber(value: number) {
 function App() {
   const [game, setGame] = useState<VillageState | null>(null)
   const [population, setPopulation] = useState<Population | null>(null)
+  const [military, setMilitary] = useState<MilitaryState | null>(null)
+  const [activeTab, setActiveTab] = useState<'village' | 'troops'>('village')
+  const [recruitAmounts, setRecruitAmounts] = useState<Record<string, number>>({})
   const [now, setNow] = useState(Date.now())
   const [message, setMessage] = useState('Willkommen in deinem Dorf!')
   const [loading, setLoading] = useState(true)
@@ -113,9 +148,10 @@ function App() {
   const [playerName, setPlayerName] = useState('Neuer Herrscher')
 
   const loadVillage = useCallback(async () => {
-    const [villageResult, populationResult] = await Promise.all([
+    const [villageResult, populationResult, militaryResult] = await Promise.all([
       supabase.rpc('get_my_village_state'),
       supabase.rpc('get_my_population_state'),
+      supabase.rpc('get_my_military_state'),
     ])
 
     if (villageResult.error) {
@@ -136,6 +172,17 @@ function App() {
       setMessage(`Bevölkerung konnte nicht geladen werden: ${populationResult.error.message}`)
     } else if (populationResult.data) {
       setPopulation(populationResult.data as Population)
+    }
+
+    if (militaryResult.error) {
+      setMessage(`Truppen konnten nicht geladen werden: ${militaryResult.error.message}`)
+    } else if (militaryResult.data) {
+      const militaryData = militaryResult.data as Record<string, unknown>
+      const queue = militaryData.training_queue ?? militaryData.recruitment_queue ?? militaryData.queue
+      setMilitary({
+        units: Array.isArray(militaryData.units) ? militaryData.units as Unit[] : [],
+        training_queue: Array.isArray(queue) ? queue as Training[] : [],
+      })
     }
 
     setLoading(false)
@@ -216,6 +263,46 @@ function App() {
     setBusy(true)
     await loadVillage()
     setMessage('Dorfdaten wurden aktualisiert.')
+    setBusy(false)
+  }
+
+  async function recruitUnit(unit: Unit) {
+    if (!game || !population || !military || busy) return
+
+    const quantity = Math.max(1, Math.min(1000, Math.floor(recruitAmounts[unit.code] ?? 1)))
+    if (military.training_queue.length > 0) {
+      setMessage('In deiner Kaserne läuft bereits ein Ausbildungsauftrag.')
+      return
+    }
+    if (unit.current_building_level < unit.required_building_level) {
+      setMessage('Die benötigte Kaserne ist noch nicht weit genug ausgebaut.')
+      return
+    }
+    if (population.available < unit.population_cost * quantity) {
+      setMessage('Nicht genügend freie Bevölkerung für diese Truppenmenge.')
+      return
+    }
+    if (game.resources.wood < unit.wood_cost * quantity || game.resources.clay < unit.clay_cost * quantity || game.resources.iron < unit.iron_cost * quantity) {
+      setMessage('Nicht genügend Rohstoffe für diese Truppenmenge.')
+      return
+    }
+
+    setBusy(true)
+    setMessage(`Ausbildung von ${quantity} ${unit.name} wird gestartet ...`)
+    const { data, error } = await supabase.rpc('start_recruitment', {
+      p_unit_code: unit.code,
+      p_quantity: quantity,
+    })
+
+    if (error) {
+      setMessage(error.message)
+      setBusy(false)
+      await loadVillage()
+      return
+    }
+
+    setMessage(`${quantity} ${unit.name} werden ausgebildet.`)
+    await loadVillage()
     setBusy(false)
   }
 
@@ -335,15 +422,17 @@ function App() {
       </section>
 
       <nav className="navigation">
-        <button className="active">Dorf</button>
+        <button className={activeTab === 'village' ? 'active' : ''} onClick={() => setActiveTab('village')}>Dorf</button>
         <button disabled>Karte</button>
-        <button disabled>Truppen</button>
+        <button className={activeTab === 'troops' ? 'active' : ''} onClick={() => setActiveTab('troops')}>Truppen</button>
         <button disabled>Berichte</button>
         <button disabled>Nachrichten</button>
         <button disabled>Stamm</button>
       </nav>
 
       <main className="main">
+        {activeTab === 'village' ? (
+          <>
         <div className="welcome">
           <div>
             <p className="eyebrow">DEIN LEHEN</p>
@@ -510,6 +599,96 @@ function App() {
             {busy ? 'Bitte warten ...' : 'Dorf aktualisieren'}
           </button>
         </section>
+          </>
+        ) : (
+          <section className="troops-view">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">DEIN HEER</p>
+                <h2>Truppen ausbilden</h2>
+              </div>
+              <span className="building-count">{military?.units.reduce((sum, unit) => sum + unit.quantity, 0) ?? 0} Soldaten</span>
+            </div>
+
+            {military?.training_queue[0] ? (
+              <div className="game-controls">
+                <h2>Ausbildung läuft</h2>
+                <p>
+                  {military.units.find(unit => unit.code === military.training_queue[0].unit_code)?.name ?? military.training_queue[0].unit_code}
+                  {' · '}{military.training_queue[0].quantity} Einheiten
+                </p>
+                <p>Fertigstellung: {new Date(military.training_queue[0].completes_at).toLocaleString('de-DE')}</p>
+                <p>Die Ausbildung wird automatisch gutgeschrieben, sobald sie abgeschlossen ist und der Spielstand aktualisiert wird.</p>
+              </div>
+            ) : (
+              <div className="game-controls">
+                <p>Aktuell werden keine Truppen ausgebildet.</p>
+              </div>
+            )}
+
+            <div className="unit-grid">
+              {military?.units.map(unit => {
+                const amount = Math.max(1, Math.min(1000, Math.floor(recruitAmounts[unit.code] ?? 1)))
+                const hasBuilding = unit.current_building_level >= unit.required_building_level
+                const enoughResources =
+                  resources.wood >= unit.wood_cost * amount &&
+                  resources.clay >= unit.clay_cost * amount &&
+                  resources.iron >= unit.iron_cost * amount
+                const enoughPopulation = Boolean(population && population.available >= unit.population_cost * amount)
+                const queueBusy = military.training_queue.length > 0
+
+                return (
+                  <article className="unit-card" key={unit.code}>
+                    <div className="unit-card-heading">
+                      <div className="building-icon">{unit.code === 'spear' ? '🗡️' : unit.code === 'sword' ? '⚔️' : '🪖'}</div>
+                      <div>
+                        <h3>{unit.name}</h3>
+                        <p>Im Dorf: <strong>{formatNumber(unit.quantity)}</strong></p>
+                      </div>
+                    </div>
+                    <div className="unit-stats">
+                      <span>Angriff: {unit.attack}</span>
+                      <span>Abwehr Inf.: {unit.defense_infantry}</span>
+                      <span>Abwehr Kav.: {unit.defense_cavalry}</span>
+                      <span>Beute: {unit.carry_capacity}</span>
+                    </div>
+                    <p className="unit-requirement">
+                      Voraussetzung: Kaserne Stufe {unit.required_building_level}
+                      {' · '}Aktuell: {unit.current_building_level}
+                      {hasBuilding ? ' ✅' : ' 🔒'}
+                    </p>
+                    <p className="unit-costs">
+                      Kosten pro Einheit: 🪵 {formatNumber(unit.wood_cost)}
+                      {' · '}🧱 {formatNumber(unit.clay_cost)}
+                      {' · '}⛏️ {formatNumber(unit.iron_cost)}
+                    </p>
+                    <p className="unit-costs">
+                      Bevölkerung: {unit.population_cost} · Ausbildungszeit: {formatTime(unit.build_seconds)}
+                    </p>
+                    <label className="unit-amount">
+                      Anzahl
+                      <input
+                        type="number"
+                        min="1"
+                        max="1000"
+                        value={amount}
+                        onChange={event => setRecruitAmounts(current => ({ ...current, [unit.code]: Math.max(1, Math.min(1000, Number(event.target.value) || 1)) }))}
+                      />
+                    </label>
+                    <button
+                      className="upgrade"
+                      disabled={busy || queueBusy || !hasBuilding || !enoughResources || !enoughPopulation}
+                      onClick={() => recruitUnit(unit)}
+                    >
+                      {queueBusy ? 'Ausbildung belegt' : !hasBuilding ? 'Kaserne ausbauen' : !enoughResources ? 'Zu wenig Rohstoffe' : !enoughPopulation ? 'Zu wenig Bevölkerung' : 'Ausbilden'}
+                    </button>
+                  </article>
+                )
+              })}
+            </div>
+            {!military && <p>Truppendaten werden geladen ...</p>}
+          </section>
+        )}
       </main>
 
       <footer>
