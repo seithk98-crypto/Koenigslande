@@ -121,6 +121,18 @@ const buildingDetails: Record<string, { icon: string; description: string }> = {
   wall: { icon: '🛡️', description: 'Verstärkt die Verteidigung deines Dorfes.' },
 }
 
+const unitDetails: Record<string, { icon: string; building: string }> = {
+  spear: { icon: '🗡️', building: 'Kaserne' },
+  sword: { icon: '⚔️', building: 'Kaserne' },
+  axe: { icon: '🪓', building: 'Kaserne' },
+  archer: { icon: '🏹', building: 'Kaserne' },
+  light_cavalry: { icon: '🐎', building: 'Stall' },
+  heavy_cavalry: { icon: '🐴', building: 'Stall' },
+  ram: { icon: '🪵', building: 'Werkstatt' },
+  catapult: { icon: '🏹', building: 'Werkstatt' },
+  paladin: { icon: '🛡️', building: 'Schmiede' },
+}
+
 function formatTime(seconds: number) {
   const safe = Math.max(0, seconds)
   const hours = Math.floor(safe / 3600)
@@ -665,7 +677,7 @@ function App() {
                 return (
                   <article className="unit-card" key={unit.code}>
                     <div className="unit-card-heading">
-                      <div className="building-icon">{unit.code === 'spear' ? '🗡️' : unit.code === 'sword' ? '⚔️' : '🪖'}</div>
+                      <div className="building-icon">{unitDetails[unit.code]?.icon ?? '🪖'}</div>
                       <div>
                         <h3>{unit.name}</h3>
                         <p>Im Dorf: <strong>{formatNumber(unit.quantity)}</strong></p>
@@ -678,7 +690,7 @@ function App() {
                       <span>Beute: {unit.carry_capacity}</span>
                     </div>
                     <p className="unit-requirement">
-                      Voraussetzung: Kaserne Stufe {unit.required_building_level}
+                      Voraussetzung: {unitDetails[unit.code]?.building ?? unit.required_building_code} Stufe {unit.required_building_level}
                       {' · '}Aktuell: {unit.current_building_level}
                       {hasBuilding ? ' ✅' : ' 🔒'}
                     </p>
