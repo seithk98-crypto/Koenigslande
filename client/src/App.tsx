@@ -78,9 +78,12 @@ type Unit = {
 type Training = {
   id: string
   unit_code: string
+  unit_name?: string
   quantity: number
+  completed_quantity?: number
   started_at: string
   completes_at: string
+  next_unit_at?: string
   status: string
 }
 
@@ -270,10 +273,6 @@ function App() {
     if (!game || !population || !military || busy) return
 
     const quantity = Math.max(1, Math.min(1000, Math.floor(recruitAmounts[unit.code] ?? 1)))
-    if (military.training_queue.length > 0) {
-      setMessage('In deiner Kaserne läuft bereits ein Ausbildungsauftrag.')
-      return
-    }
     if (unit.current_building_level < unit.required_building_level) {
       setMessage('Die benötigte Kaserne ist noch nicht weit genug ausgebaut.')
       return
@@ -610,15 +609,42 @@ function App() {
               <span className="building-count">{military?.units.reduce((sum, unit) => sum + unit.quantity, 0) ?? 0} Soldaten</span>
             </div>
 
-            {military?.training_queue[0] ? (
+            {military && military.training_queue.length > 0 ? (
               <div className="game-controls">
-                <h2>Ausbildung läuft</h2>
-                <p>
-                  {military.units.find(unit => unit.code === military.training_queue[0].unit_code)?.name ?? military.training_queue[0].unit_code}
-                  {' · '}{military.training_queue[0].quantity} Einheiten
-                </p>
-                <p>Fertigstellung: {new Date(military.training_queue[0].completes_at).toLocaleString('de-DE')}</p>
-                <p>Die Ausbildung wird automatisch gutgeschrieben, sobald sie abgeschlossen ist und der Spielstand aktualisiert wird.</p>
+                <h2>Ausbildungswarteschlange</h2>
+                <p>Die Aufträge werden der Reihe nach abgearbeitet. Jede Einheit wird einzeln fertiggestellt.</p>
+                {military.training_queue.map((order, index) => {
+                  const unit = military.units.find(item => item.code === order.unit_code)
+                  const unitSeconds = Math.max(1, unit?.build_seconds ?? 1)
+                  const orderStart = new Date(order.started_at).getTime()
+                  const nextUnitAt = new Date(order.next_unit_at ?? order.started_at).getTime()
+                  const completed = order.completed_quantity ?? 0
+                  const remainingUnits = Math.max(0, order.quantity - completed)
+                  const waiting = now < orderStart
+                  const secondsLeft = Math.max(0, Math.ceil((nextUnitAt - now) / 1000))
+                  const unitProgress = waiting
+                    ? 0
+                    : Math.max(0, Math.min(100, ((now - (nextUnitAt - unitSeconds * 1000)) / (unitSeconds * 1000)) * 100))
+
+                  return (
+                    <div className="training-order" key={order.id}>
+                      <div className="training-order-heading">
+                        <strong>{index + 1}. {order.unit_name ?? unit?.name ?? order.unit_code}</strong>
+                        <span>{completed} / {order.quantity} fertig</span>
+                      </div>
+                      <p>{remainingUnits} Einheiten noch im Auftrag</p>
+                      {waiting ? (
+                        <p>Startet: {new Date(order.started_at).toLocaleString('de-DE')}</p>
+                      ) : (
+                        <p>Nächste Einheit fertig in: <strong>{formatTime(secondsLeft)}</strong></p>
+                      )}
+                      <div className="construction-bar">
+                        <div className="construction-progress" style={{ width: `${unitProgress}%` }} />
+                      </div>
+                      <p>Auftrag vollständig fertig: {new Date(order.completes_at).toLocaleString('de-DE')}</p>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <div className="game-controls">
@@ -635,7 +661,6 @@ function App() {
                   resources.clay >= unit.clay_cost * amount &&
                   resources.iron >= unit.iron_cost * amount
                 const enoughPopulation = Boolean(population && population.available >= unit.population_cost * amount)
-                const queueBusy = military.training_queue.length > 0
 
                 return (
                   <article className="unit-card" key={unit.code}>
@@ -677,10 +702,10 @@ function App() {
                     </label>
                     <button
                       className="upgrade"
-                      disabled={busy || queueBusy || !hasBuilding || !enoughResources || !enoughPopulation}
+                      disabled={busy || !hasBuilding || !enoughResources || !enoughPopulation}
                       onClick={() => recruitUnit(unit)}
                     >
-                      {queueBusy ? 'Ausbildung belegt' : !hasBuilding ? 'Kaserne ausbauen' : !enoughResources ? 'Zu wenig Rohstoffe' : !enoughPopulation ? 'Zu wenig Bevölkerung' : 'Ausbilden'}
+                      {!hasBuilding ? 'Kaserne ausbauen' : !enoughResources ? 'Zu wenig Rohstoffe' : !enoughPopulation ? 'Zu wenig Bevölkerung' : 'In Warteschlange einreihen'}
                     </button>
                   </article>
                 )
