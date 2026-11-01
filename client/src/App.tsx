@@ -391,7 +391,7 @@ function App() {
     return (
       <div className="game">
         <main className="main">
-          <h1>🏰 KRONENREICH</h1>
+          <h1>🏰 KÖNIGSLANDE</h1>
           <p>Dein Königreich wird aus der Datenbank geladen ...</p>
         </main>
       </div>
@@ -446,7 +446,7 @@ function App() {
   return (
     <div className="game">
       <header className="topbar">
-        <div className="logo">⚔️ <span>KRONENREICH</span></div>
+        <div className="logo">⚔️ <span>KÖNIGSLANDE</span></div>
         <div className="player">
           Spieler: <strong>{playerName}</strong>
         </div>
@@ -863,7 +863,7 @@ function App() {
       </main>
 
       <footer>
-        KRONENREICH · Eine Welt. Viele Herrscher. Ein Schicksal.
+        KÖNIGSLANDE · Eine Welt. Viele Herrscher. Ein Schicksal.
       </footer>
     </div>
   )
