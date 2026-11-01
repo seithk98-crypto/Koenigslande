@@ -1,6 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import WorldMap from './WorldMap'
 import './App.css'
 
 type Resources = {
@@ -161,7 +162,7 @@ function App() {
   const [game, setGame] = useState<VillageState | null>(null)
   const [population, setPopulation] = useState<Population | null>(null)
   const [military, setMilitary] = useState<MilitaryState | null>(null)
-  const [activeTab, setActiveTab] = useState<'village' | 'troops'>('village')
+  const [activeTab, setActiveTab] = useState<'village' | 'map' | 'troops'>('village')
   const [recruitAmounts, setRecruitAmounts] = useState<Record<string, number>>({})
   const [attackTargets, setAttackTargets] = useState<AttackTarget[]>([])
   const [selectedTargetId, setSelectedTargetId] = useState('')
@@ -504,7 +505,7 @@ function App() {
 
       <nav className="navigation">
         <button className={activeTab === 'village' ? 'active' : ''} onClick={() => setActiveTab('village')}>Dorf</button>
-        <button disabled>Karte</button>
+        <button className={activeTab === 'map' ? 'active' : ''} onClick={() => setActiveTab('map')}>Karte</button>
         <button className={activeTab === 'troops' ? 'active' : ''} onClick={() => setActiveTab('troops')}>Truppen</button>
         <button disabled>Berichte</button>
         <button disabled>Nachrichten</button>
@@ -681,6 +682,8 @@ function App() {
           </button>
         </section>
           </>
+        ) : activeTab === 'map' ? (
+          <WorldMap villageName={village.name} villageX={village.x} villageY={village.y} />
         ) : (
           <section className="troops-view">
             <div className="section-heading">
