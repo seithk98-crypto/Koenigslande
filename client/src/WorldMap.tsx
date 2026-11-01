@@ -56,36 +56,40 @@ function WorldMap({ villageName, villageX, villageY }: WorldMapProps) {
 
       <div className="world-map-layout">
         <div className="world-map-board" role="group" aria-label="Weltkarte mit deinem Dorf und Barbarendörfern">
-          {cells.map(cell => {
-            const dx = cell.col - 4
-            const dy = cell.row - 4
-            const barbarian = barbarianVillages.find(village => village.dx === dx && village.dy === dy)
-            const isHome = dx === 0 && dy === 0
+          {Array.from({ length: 9 }, (_, row) => (
+            <div className={`world-map-row ${row % 2 === 1 ? 'offset-row' : ''}`} key={row}>
+              {cells.filter(cell => cell.row === row).map(cell => {
+                const dx = cell.col - 4
+                const dy = cell.row - 4
+                const barbarian = barbarianVillages.find(village => village.dx === dx && village.dy === dy)
+                const isHome = dx === 0 && dy === 0
 
-            return (
-              <div className={`world-map-cell ${isHome ? 'home-cell' : barbarian ? 'occupied-cell' : ''}`} key={`${cell.col}-${cell.row}`}>
-                {isHome ? (
-                  <div className="map-village home-village" title={villageName}>
-                    <span>🏰</span>
-                    <small>Du</small>
+                return (
+                  <div className={`world-map-cell ${isHome ? 'home-cell' : barbarian ? 'occupied-cell' : ''}`} key={`${cell.col}-${cell.row}`}>
+                    {isHome ? (
+                      <div className="map-village home-village" title={villageName}>
+                        <span>🏰</span>
+                        <small>Du</small>
+                      </div>
+                    ) : barbarian ? (
+                      <button
+                        type="button"
+                        className={`map-village barbarian-village ${selectedId === barbarian.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedId(barbarian.id)}
+                        title={barbarian.name}
+                        aria-label={`${barbarian.name} auswählen`}
+                      >
+                        <span>🏚️</span>
+                        <small>Barbar</small>
+                      </button>
+                    ) : (
+                      <span className="map-empty-mark" aria-hidden="true">·</span>
+                    )}
                   </div>
-                ) : barbarian ? (
-                  <button
-                    type="button"
-                    className={`map-village barbarian-village ${selectedId === barbarian.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedId(barbarian.id)}
-                    title={barbarian.name}
-                    aria-label={`${barbarian.name} auswählen`}
-                  >
-                    <span>🏚️</span>
-                    <small>Barbar</small>
-                  </button>
-                ) : (
-                  <span className="map-empty-mark" aria-hidden="true">·</span>
-                )}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          ))}
         </div>
 
         <aside className="world-map-side">
