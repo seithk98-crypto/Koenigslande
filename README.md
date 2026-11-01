@@ -1,6 +1,6 @@
-# Kronenreich
+# Königslande
 
-**Kronenreich** ist ein kostenloses, browserbasiertes Mittelalter-Strategiespiel, inspiriert von klassischen Dorf- und Aufbauspielen wie *Die Stämme*. Das Projekt befindet sich in aktiver Entwicklung.
+**Königslande** ist ein kostenloses, browserbasiertes Mittelalter-Strategiespiel, inspiriert von klassischen Dorf- und Aufbauspielen wie *Die Stämme*. Das Projekt befindet sich in aktiver Entwicklung.
 
 Ziel ist ein faires Open-Source-Spiel ohne Pay-to-Win: Fortschritt soll durch Planung, Ausbau, Handel und Strategie entstehen – nicht durch Echtgeldvorteile.
 
