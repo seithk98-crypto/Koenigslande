@@ -405,3 +405,90 @@ footer {
     min-height: 230px;
   }
 }
+
+
+.troops-view {
+  margin-top: 10px;
+}
+
+.unit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.unit-card {
+  padding: 18px;
+  background: linear-gradient(135deg, #302a1e, #211e17);
+  border: 1px solid #675333;
+  border-radius: 5px;
+}
+
+.unit-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.unit-card-heading h3 {
+  margin: 0 0 5px;
+  color: #e6d1a8;
+}
+
+.unit-card-heading p,
+.unit-costs,
+.unit-requirement {
+  margin: 5px 0;
+  color: #aaa18e;
+  font-size: 12px;
+}
+
+.unit-card-heading strong {
+  color: #e3c47e;
+}
+
+.unit-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.unit-stats span {
+  padding: 6px 8px;
+  color: #d6c39d;
+  background: #191711;
+  border: 1px solid #51432b;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.unit-amount {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: #d6c39d;
+  font-size: 12px;
+}
+
+.unit-amount input {
+  width: 90px;
+  padding: 8px;
+  color: #f0dfb9;
+  background: #17150f;
+  border: 1px solid #81683b;
+  border-radius: 4px;
+}
+
+.unit-card .upgrade {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .unit-grid {
+    grid-template-columns: 1fr;
+  }
+}
