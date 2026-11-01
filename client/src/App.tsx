@@ -92,6 +92,13 @@ type MilitaryState = {
   training_queue: Training[]
 }
 
+type AttackTarget = {
+  id: string
+  name: string
+  x: number
+  y: number
+}
+
 type VillageState = {
   village: Village
   resources: Resources & {
@@ -156,6 +163,10 @@ function App() {
   const [military, setMilitary] = useState<MilitaryState | null>(null)
   const [activeTab, setActiveTab] = useState<'village' | 'troops'>('village')
   const [recruitAmounts, setRecruitAmounts] = useState<Record<string, number>>({})
+  const [attackTargets, setAttackTargets] = useState<AttackTarget[]>([])
+  const [selectedTargetId, setSelectedTargetId] = useState('')
+  const [attackAmounts, setAttackAmounts] = useState<Record<string, number>>({})
+  const [targetsLoading, setTargetsLoading] = useState(false)
   const [now, setNow] = useState(Date.now())
   const [message, setMessage] = useState('Willkommen in deinem Dorf!')
   const [loading, setLoading] = useState(true)
@@ -202,6 +213,25 @@ function App() {
 
     setLoading(false)
   }, [])
+
+  const loadAttackTargets = useCallback(async () => {
+    setTargetsLoading(true)
+    const { data, error } = await supabase.rpc('get_attack_targets')
+
+    if (error) {
+      setMessage(`Angriffsziele konnten nicht geladen werden: ${error.message}`)
+    } else {
+      const targets = Array.isArray(data) ? data as AttackTarget[] : []
+      setAttackTargets(targets)
+      setSelectedTargetId(current => current || targets[0]?.id || '')
+    }
+
+    setTargetsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'troops') loadAttackTargets()
+  }, [activeTab, loadAttackTargets])
 
   useEffect(() => {
     loadVillage()
@@ -278,6 +308,46 @@ function App() {
     setBusy(true)
     await loadVillage()
     setMessage('Dorfdaten wurden aktualisiert.')
+    setBusy(false)
+  }
+
+  async function startAttack() {
+    if (!game || !military || !selectedTargetId || busy) return
+
+    const selectedUnits = Object.fromEntries(
+      Object.entries(attackAmounts)
+        .filter(([, quantity]) => Number.isInteger(quantity) && quantity > 0)
+        .map(([code, quantity]) => [code, quantity])
+    )
+
+    if (Object.keys(selectedUnits).length === 0) {
+      setMessage('Wähle mindestens eine Einheit für den Angriff.')
+      return
+    }
+
+    setBusy(true)
+    setMessage('Dein Angriff wird vorbereitet ...')
+
+    const { data, error } = await supabase.rpc('start_attack', {
+      p_origin_village_id: game.village.id,
+      p_target_village_id: selectedTargetId,
+      p_units: selectedUnits,
+    })
+
+    if (error) {
+      setMessage(`Angriff konnte nicht gestartet werden: ${error.message}`)
+      setBusy(false)
+      await loadVillage()
+      return
+    }
+
+    const arrival = data?.arrives_at
+      ? new Date(data.arrives_at).toLocaleString('de-DE')
+      : 'wird berechnet'
+
+    setAttackAmounts({})
+    setMessage(`Angriff unterwegs! Voraussichtliche Ankunft: ${arrival}`)
+    await Promise.all([loadVillage(), loadAttackTargets()])
     setBusy(false)
   }
 
@@ -663,6 +733,70 @@ function App() {
                 <p>Aktuell werden keine Truppen ausgebildet.</p>
               </div>
             )}
+
+            <div className="game-controls attack-panel">
+              <h2>⚔️ Angriff starten</h2>
+              <p>Wähle ein feindliches Dorf und stelle deine Angriffstruppen zusammen. Die Reisezeit richtet sich nach der langsamsten Einheit.</p>
+
+              {targetsLoading ? (
+                <p>Feindliche Dörfer werden geladen ...</p>
+              ) : attackTargets.length === 0 ? (
+                <p>Aktuell wurden keine fremden Dörfer in deiner Welt gefunden.</p>
+              ) : (
+                <>
+                  <label className="unit-amount attack-target">
+                    Angriffsziel
+                    <select
+                      value={selectedTargetId}
+                      onChange={event => setSelectedTargetId(event.target.value)}
+                    >
+                      {attackTargets.map(target => (
+                        <option key={target.id} value={target.id}>
+                          {target.name} ({target.x} | {target.y})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="attack-unit-list">
+                    {military?.units.filter(unit => unit.quantity > 0).map(unit => {
+                      const amount = Math.max(0, Math.min(unit.quantity, Math.floor(attackAmounts[unit.code] ?? 0)))
+                      return (
+                        <label className="attack-unit-row" key={unit.code}>
+                          <span>{unitDetails[unit.code]?.icon ?? '🪖'} {unit.name}</span>
+                          <span>Verfügbar: {formatNumber(unit.quantity)}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max={unit.quantity}
+                            value={amount}
+                            onChange={event => setAttackAmounts(current => ({
+                              ...current,
+                              [unit.code]: Math.max(0, Math.min(unit.quantity, Math.floor(Number(event.target.value) || 0))),
+                            }))}
+                          />
+                          <button
+                            type="button"
+                            className="upgrade"
+                            onClick={() => setAttackAmounts(current => ({ ...current, [unit.code]: unit.quantity }))}
+                          >
+                            Alle
+                          </button>
+                        </label>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    className="upgrade attack-submit"
+                    disabled={busy || !selectedTargetId || !military?.units.some(unit => (attackAmounts[unit.code] ?? 0) > 0)}
+                    onClick={startAttack}
+                  >
+                    {busy ? 'Angriff wird gestartet ...' : 'Angriff losschicken'}
+                  </button>
+                </>
+              )}
+            </div>
 
             <div className="unit-grid">
               {military?.units.map(unit => {
