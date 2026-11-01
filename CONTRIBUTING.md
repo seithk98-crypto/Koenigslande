@@ -1,6 +1,6 @@
-# Mitwirken an Kronenreich
+# Mitwirken an Königslande
 
-Danke für dein Interesse! Kronenreich ist ein frühes Open-Source-Projekt. Auch kleine, gut erklärte Beiträge helfen.
+Danke für dein Interesse! Königslande ist ein frühes Open-Source-Projekt. Auch kleine, gut erklärte Beiträge helfen.
 
 ## Bevor du anfängst
 
@@ -28,4 +28,4 @@ Danke für dein Interesse! Kronenreich ist ein frühes Open-Source-Projekt. Auch
 
 Bitte schreibe Issues und Pull Requests möglichst auf Deutsch oder Englisch. Sei freundlich und respektvoll. Unterschiedliche Erfahrungsstände sind willkommen – Fragen sind ausdrücklich okay.
 
-Vielen Dank, dass du Kronenreich mitentwickelst!
+Vielen Dank, dass du Königslande mitentwickelst!
