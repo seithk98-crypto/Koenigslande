@@ -24,7 +24,7 @@
   border: 1px solid #d1b47a55;
   pointer-events: none;
 }
-.world-map-row { display: flex; gap: 2px; height: var(--tile-h); margin-top: calc(var(--tile-h) * -.16); }
+.world-map-row { display: flex; gap: 2px; height: var(--tile-h); margin-top: calc(var(--tile-h) * -.25); }
 .world-map-row:first-child { margin-top: 0; }
 .world-map-row.offset-row { margin-left: calc(var(--tile-w) / 2); }
 .world-map-cell {
