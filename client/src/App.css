@@ -520,3 +520,72 @@ footer {
 .training-order p {
   margin: 8px 0;
 }
+
+
+.attack-panel {
+  margin-top: 26px;
+}
+
+.attack-target {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attack-target select {
+  width: min(100%, 420px);
+  padding: 10px 12px;
+  color: #f0dfb9;
+  background: #17150f;
+  border: 1px solid #81683b;
+  border-radius: 4px;
+}
+
+.attack-unit-list {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.attack-unit-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(110px, auto) 90px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #d6c39d;
+  background: #191711;
+  border: 1px solid #51432b;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.attack-unit-row input {
+  width: 90px;
+  padding: 8px;
+  color: #f0dfb9;
+  background: #17150f;
+  border: 1px solid #81683b;
+  border-radius: 4px;
+}
+
+.attack-submit {
+  width: 100%;
+  padding: 12px;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .attack-unit-row {
+    grid-template-columns: 1fr 90px;
+  }
+
+  .attack-unit-row span:nth-child(2) {
+    grid-column: 1;
+  }
+
+  .attack-unit-row input,
+  .attack-unit-row button {
+    grid-row: 1 / span 2;
+  }
+}
