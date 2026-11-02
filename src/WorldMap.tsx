@@ -28,8 +28,12 @@ export default function WorldMap({
   const boardSize = radius * 2 + 1
 
   function startPan(event: PointerEvent<HTMLDivElement>) {
+    const target = event.target
+    if (target instanceof Element && target.closest('.map-tile.has-settlement')) {
+      pointerStart.current = null
+      return
+    }
     pointerStart.current = { x: event.clientX, y: event.clientY }
-    event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   function finishPan(event: PointerEvent<HTMLDivElement>) {
@@ -51,7 +55,7 @@ export default function WorldMap({
       <div className="map-frame">
         <div className="map-frame-top"><span><i /> GEMEINSAME WELT · LIVE-DATEN</span><span>KOORDINATENRASTER</span></div>
         <div className={`map-viewport${loading ? ' is-loading' : ''}`} ref={viewportRef} onPointerDown={startPan} onPointerUp={finishPan} onPointerCancel={() => { pointerStart.current = null }} aria-label="Interaktive Weltkarte, zum Verschieben ziehen">
-          <div className="map-board" style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}>
+          <div className={`map-board${radius <= 12 ? ' map-board-detail' : ''}`} style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}>
             {tiles.map((tile) => {
               const TerrainIcon = TERRAIN_ICONS[tile.terrain]
               const selected = selectedTile?.x === tile.x && selectedTile?.y === tile.y
@@ -63,8 +67,8 @@ export default function WorldMap({
                       : ' player-settlement'
                 : ''
               const position = getTileGridPosition(tile.x, tile.y, center, radius)
-              return <button type="button" key={`${tile.x}:${tile.y}`} className={`map-tile terrain-${tile.terrain}${settlement}${selected ? ' selected' : ''}`} style={{ gridColumnStart: position.column, gridRowStart: position.row }} onClick={() => onSelectTile(tile)} title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`} aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`}>
-                {tile.village_id ? <span className="settlement-marker">{isOwnVillage ? <Castle size={20} /> : tile.is_barbarian ? <span className="barbarian-mark">✦</span> : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? <Castle size={17} /> : <span className="player-mark">◆</span>}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span> : TerrainIcon ? <TerrainIcon className="terrain-mark" size={13} /> : null}
+              return <button type="button" key={`${tile.x}:${tile.y}`} className={`map-tile terrain-${tile.terrain}${settlement}${tile.village_id ? ' has-settlement' : ''}${selected ? ' selected' : ''}`} style={{ gridColumnStart: position.column, gridRowStart: position.row }} onClick={() => onSelectTile(tile)} title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`} aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`}>
+                {tile.village_id ? <><span className="settlement-marker">{isOwnVillage ? <Castle size={20} /> : tile.is_barbarian ? <span className="barbarian-mark">✦</span> : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? <Castle size={17} /> : <span className="player-mark">◆</span>}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainIcon className="terrain-mark" size={13} /> : null}
                 <span className="tile-coordinate">{tile.x}|{tile.y}</span>
               </button>
             })}

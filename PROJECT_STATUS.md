@@ -112,6 +112,7 @@ Stand: Phase F lokal geprüft; Frankfurt-Supabase mit allen 13 Migrationen einge
 
 - **P2, behoben:** Der anfängliche JavaScript-Chunk überschritt mit 516,79 kB die Vite-Warnschwelle. Die nur bei Auswahl benötigte Gemeinschaftsansicht wird jetzt dynamisch geladen; der initiale Chunk beträgt 496,58 kB, der zusätzliche Gemeinschafts-Chunk 22,47 kB.
 - **P2, behoben:** Der 30-Sekunden-Refresh lud Ranglisten auch außerhalb des Ranglisten-Tabs und konnte bei langsamen Antworten überlappen. Ranglisten werden nun nur im aktiven Tab geladen; Multiplayer-Übersicht und Ranglisten verhindern parallele Folgeabfragen.
+- **P2, behoben:** Kartenmarker konnten mit dem Karten-Pan konkurrieren. Pointer-Drags starten nicht mehr auf Siedlungsmarkern; Marker zeigen nun eindeutiges Hover-/Auswahlfeedback. Der Remote-Karten-RPC liefert beiden Testspielern den jeweils fremden Marker im Standardradius. Build erfolgreich; ein manueller visueller Browsercheck wurde nicht ausgeführt.
 - **Security-Prüfung:** In den geprüften Migrationen und lokalen Tests wurde keine offene Berechtigungslücke festgestellt. Kritische Tabellen haben RLS und keine direkten Client-Schreibrechte; Kampf-, Wirtschafts-, Rekrutierungs-, Nachrichten- und Allianzaktionen laufen über authentifizierte RPCs. Die Prüfgrenzen stehen in [docs/PHASE_F_QUALITY.md](docs/PHASE_F_QUALITY.md).
 - **Balance:** Keine Zahlen geändert. Es fehlen repräsentative Langzeit-/Spielerdaten für eine belastbare Kalibrierung; willkürliche Änderungen wurden vermieden. Der Phase-F-Bericht enthält die vollständige Einheitenübersicht.
 - **Performance:** Kartenregionen sind auf höchstens 41 × 41 Felder begrenzt und Ranglisten auf je 100 Einträge. Ein großmaßstäblicher Lasttest wurde nicht durchgeführt.
@@ -123,6 +124,7 @@ Stand: Phase F lokal geprüft; Frankfurt-Supabase mit allen 13 Migrationen einge
 - `npm run test:integration`: Phasen A–E erfolgreich, inklusive paralleler Requests, Idempotenz, RLS, Kampfauflösung, Mehrdorf, Allianzen, Nachrichten und Ranglisten.
 - `npm run lint`: erfolgreich.
 - `npm run build`: TypeScript und Vite erfolgreich. Der initiale Chunk ist unter 500 kB; die vorherige Vite-Warnung tritt nicht mehr auf.
+- Nach Karteninteraktionskorrektur: `npm run build` erfolgreich.
 - Frankfurt-Projekt `uckzfsfrxqmicpaongbi` in `eu-central-1`: alle 13 Migrationen angewendet; 20 Anwendungstabellen mit aktivem RLS, 60 Funktionen, 4 benutzerdefinierte Trigger, 43 Indizes und 3 Policies geprüft.
 - Remote-Grants: keine unerwarteten Tabellenrechte, `app_private` für Clientrollen unzugänglich. Ein fremder Dorfabruf wurde mit `P0002` abgewiesen.
 - Zwei Auth-Konten besitzen je ein Profil, ein Dorf, einen Ressourcenbestand und 12 Gebäude in derselben Welt. Erster Login und Session-Erhalt nach Neuladen wurden vom Nutzer bestätigt.

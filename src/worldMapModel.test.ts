@@ -13,4 +13,8 @@ describe('world map coordinate placement', () => {
     expect(getTileGridPosition(90, -90, { x: 100, y: -100 }, 10)).toEqual({ column: 1, row: 1 })
     expect(getTileGridPosition(100, -100, { x: 100, y: -100 }, 10)).toEqual({ column: 11, row: 11 })
   })
+
+  it('places a nearby southern village inside the default origin view', () => {
+    expect(getTileGridPosition(0, -8, { x: 0, y: 0 }, 10)).toEqual({ column: 11, row: 19 })
+  })
 })
