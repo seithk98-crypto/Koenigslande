@@ -128,8 +128,11 @@ Stand: Phase F lokal geprüft; Frankfurt-Supabase mit allen 13 Migrationen einge
 - Frankfurt-Projekt `uckzfsfrxqmicpaongbi` in `eu-central-1`: alle 13 Migrationen angewendet; 20 Anwendungstabellen mit aktivem RLS, 60 Funktionen, 4 benutzerdefinierte Trigger, 43 Indizes und 3 Policies geprüft.
 - Remote-Grants: keine unerwarteten Tabellenrechte, `app_private` für Clientrollen unzugänglich. Ein fremder Dorfabruf wurde mit `P0002` abgewiesen.
 - Zwei Auth-Konten besitzen je ein Profil, ein Dorf, einen Ressourcenbestand und 12 Gebäude in derselben Welt. Erster Login und Session-Erhalt nach Neuladen wurden vom Nutzer bestätigt.
+- Remote-Aktions-Smoke-Test mit zwei kurzlebigen Konten, anschließend gelöscht: Dorfgründung, fremder Dorfzugriff abgewiesen, direkter Ressourcen-Tabellenzugriff abgewiesen, Farm-Ausbau und Kostenabbuchung.
+- Remote-Idempotenz/Race-Test: zwei parallele Requests mit derselben Bau-ID ergaben einen Auftrag und eine einmalige Abbuchung (45 Holz/40 Lehm/30 Eisen). Eine parallele Rekrutierung mit doppelter ID ergab einen Auftrag. Bei zwei unterschiedlichen gleichzeitigen Rekrutierungen, die zusammen das Holzlimit überschritten hätten, wurde genau eine akzeptiert und eine mangels Rohstoffen abgewiesen.
+- Karteninteraktion: Siedlungsmarker lösen keinen Pan-Start mehr aus, erhalten klares Auswahlfeedback; Angriffsvorbereitung aus dem ausgewählten Dorffeld ist vorhanden. Build erfolgreich; manuelle visuelle Prüfung nicht durchgeführt.
 - E-Mail-Bestätigung ist aktuell temporär deaktiviert; Signup ist aktiv. SMTP ist nicht eingerichtet/verifiziert. Vor Livebetrieb Bestätigung wieder einschalten und SMTP konfigurieren.
-- Remote-Bau-/Rekrutierungs-Race-Tests, ein zweiter unabhängiger Browserkontext, Frontend-Hosting und repräsentativer Lasttest wurden nicht durchgeführt.
+- Ein gleichzeitiger Login aus zwei unabhängigen Browserprofilen wurde vom Nutzer gemeldet, aber unabhängiger Session-Erhalt und sichtbarer Kartenstatus wurden nicht separat verifiziert. Frontend-Hosting und repräsentativer Lasttest bleiben offen.
 - Phase F fügt keine Datenbankmigration hinzu; alle bestehenden Migrationen `202611020001` bis `202611020013` sind auf Frankfurt angewendet.
 
 Der ausführliche Prüf- und Abschlussbericht steht in [docs/PHASE_F_QUALITY.md](docs/PHASE_F_QUALITY.md).
