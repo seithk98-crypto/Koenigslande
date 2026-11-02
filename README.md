@@ -1,7 +1,4 @@
 # Königslande Next
-
-Ein eigenständiger Neustart des mittelalterlichen Browser-Strategiespiels. Dieses Projekt liegt getrennt vom bisherigen Repository in `/workspaces/Koenigslande-Next`.
-
 ## Stand
 
 Phase A bis E sind umgesetzt: Supabase-Authentifizierung, ein gemeinsames PostgreSQL-Weltmodell, serverseitige Wirtschaft und Rekrutierung, Angriffe/Kämpfe sowie Multiplayer mit mehreren Dörfern, Profilen, Allianzen, Diplomatie, Nachrichten und Ranglisten. Kritische Spielaktionen und Kampfverarbeitung erfolgen serverseitig; es gibt keine lokale Fake-Anmeldung oder im Browser simulierte Spielökonomie.
