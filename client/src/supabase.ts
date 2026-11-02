@@ -1,11 +1,22 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Supabase-Zugangsdaten fehlen. Bitte .env.local prüfen.');
+const localFallback = {
+  auth: {
+    getSession: async () => ({ data: { session: null }, error: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+    signInWithPassword: async () => ({ data: { session: null }, error: null }),
+    signUp: async () => ({ data: { session: null }, error: null }),
+    resetPasswordForEmail: async () => ({ data: null, error: null }),
+    updateUser: async () => ({ data: { user: null }, error: null }),
+    signOut: async () => ({ error: null }),
+  },
+  rpc: async () => ({ data: null, error: null }),
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey)
+  : (localFallback as any)

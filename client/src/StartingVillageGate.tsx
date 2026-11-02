@@ -1,53 +1,38 @@
 
-import { useEffect, useState } from 'react';
-import { supabase } from './supabase';
+import { useContext, useEffect, useState } from 'react'
+import { SessionContext } from './SessionContext'
+import { loadGameState } from './game/persistence'
 
 type Props = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 export default function StartingVillageGate({ children }: Props) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const session = useContext(SessionContext)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    let active = true;
-
-    async function createVillage() {
-      const { data, error } = await supabase.rpc(
-        'create_starting_village'
-      );
-
-      if (!active) return;
-
-      if (error) {
-        setError(error.message);
-      } else if (!data) {
-        setError('Supabase hat keine Dorf-ID zurückgegeben.');
-      }
-
-      setLoading(false);
+    try {
+      if (!session) throw new Error('Kein lokales Profil aktiv.')
+      loadGameState(localStorage, session.email, session.displayName)
+      setLoading(false)
+    } catch {
+      setError('Lokale Spielstände konnten nicht geladen werden.')
+      setLoading(false)
     }
-
-    createVillage();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  }, [session])
 
   if (loading) {
-    return <div style={{ padding: 40, color: '#e8d5ad' }}>
-      Dein Königreich wird vorbereitet ...
-    </div>;
+    return <div style={{ padding: 40, color: '#e8d5ad' }}>Dein Königreich wird vorbereitet ...</div>
   }
 
   if (error) {
     return <div style={{ padding: 40, color: '#ff8888' }}>
       <h2>Dein Dorf konnte nicht geladen werden.</h2>
       <p>{error}</p>
-    </div>;
+    </div>
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }

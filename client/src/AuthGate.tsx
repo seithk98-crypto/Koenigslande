@@ -1,174 +1,94 @@
-
-import { useEffect, useState } from 'react';
-import type { ReactNode, FormEvent } from 'react';
-import type { Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
-import './AuthGate.css';
+import { useEffect, useState } from 'react'
+import { SessionContext, type Session } from './SessionContext'
+import './AuthGate.css'
 
 type Props = {
-  children: ReactNode;
-};
+  children: React.ReactNode
+}
+
+const STORAGE_KEY = 'koenigslande-session-v1'
 
 export default function AuthGate({ children }: Props) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [registerMode, setRegisterMode] = useState(false);
-  const [forgotMode, setForgotMode] = useState(false);
-  const [recoveryMode, setRecoveryMode] = useState(false);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [session, setSession] = useState<Session | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [registerMode, setRegisterMode] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) setMessage(error.message);
-      setSession(data.session);
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, newSession) => {
-      setSession(newSession);
-
-      if (event === 'PASSWORD_RECOVERY') {
-        setRecoveryMode(true);
-        setForgotMode(false);
-        setRegisterMode(false);
-        setMessage('Bitte lege jetzt dein neues Passwort fest.');
-      }
-
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage('');
-    setBusy(true);
-
     try {
-      if (recoveryMode) {
-        const { error } = await supabase.auth.updateUser({
-          password,
-        });
-
-        if (error) throw error;
-
-        setRecoveryMode(false);
-        setPassword('');
-        setMessage('Dein Passwort wurde erfolgreich geändert!');
-      } else if (forgotMode) {
-        const { error } = await supabase.auth.resetPasswordForEmail(
-          email.trim(),
-          {
-            redirectTo: `${window.location.origin}/`,
-          }
-        );
-
-        if (error) throw error;
-
-        setMessage(
-          'Wir haben dir eine E-Mail zum Zurücksetzen deines Passworts geschickt. Bitte prüfe dein Postfach.'
-        );
-      } else if (registerMode) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              display_name: displayName.trim(),
-            },
-          },
-        });
-
-        if (error) throw error;
-
-        if (!data.session) {
-          setMessage(
-            'Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse über den Link in deinem Postfach.'
-          );
-        } else {
-          setMessage('Dein Konto wurde erstellt.');
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-
-        if (error) throw error;
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as Session
+        setSession(parsed)
       }
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Es ist ein unbekannter Fehler aufgetreten.'
-      );
-    } finally {
-      setBusy(false);
+    } catch {
+      setMessage('Sitzung konnte nicht geladen werden.')
     }
+
+    setLoading(false)
+  }, [])
+
+  function saveSession(nextSession: Session) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession))
+    setSession(nextSession)
   }
 
-  async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) setMessage(error.message);
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setBusy(true)
+    setMessage('')
+
+    const cleanEmail = email.trim()
+    const cleanName = displayName.trim()
+
+    if (!cleanEmail || !password.trim()) {
+      setMessage('E-Mail und Passwort sind erforderlich.')
+      setBusy(false)
+      return
+    }
+
+    if (registerMode && cleanName.length < 3) {
+      setMessage('Der Spielername muss mindestens 3 Zeichen lang sein.')
+      setBusy(false)
+      return
+    }
+
+    const nextSession: Session = {
+      email: cleanEmail,
+      displayName: registerMode ? cleanName : cleanName || 'Herrscher',
+    }
+
+    saveSession(nextSession)
+    setBusy(false)
+    setMessage(registerMode ? 'Konto lokal angelegt. Willkommen im Reich.' : 'Erfolgreich angemeldet.')
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(STORAGE_KEY)
+    setSession(null)
+    setMessage('Abmeldung erfolgreich.')
   }
 
   if (loading) {
-    return <div className="auth-screen">Kronenreich wird geladen ...</div>;
-  }
-
-  if (recoveryMode) {
-    return (
-      <main className="auth-screen">
-        <section className="auth-panel">
-          <div className="auth-crown">♛</div>
-          <h1>KRONENREICH</h1>
-          <p className="auth-subtitle">Ein neues Passwort für dein Reich.</p>
-          <h2>Passwort ändern</h2>
-
-          <form onSubmit={handleSubmit}>
-            <label>
-              Neues Passwort
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                minLength={6}
-                required
-                placeholder="Mindestens 6 Zeichen"
-              />
-            </label>
-
-            <button className="auth-submit" type="submit" disabled={busy}>
-              {busy ? 'Bitte warten ...' : 'Neues Passwort speichern'}
-            </button>
-          </form>
-
-          {message && <p className="auth-message">{message}</p>}
-        </section>
-      </main>
-    );
+    return <div className="auth-screen">Kronenreich wird geladen ...</div>
   }
 
   if (session) {
     return (
-      <>
+      <SessionContext.Provider value={session}>
         <div className="account-bar">
           <span>
-            Angemeldet: <strong>{session.user.email}</strong>
+            Profil: <strong>{session.displayName}</strong>
           </span>
           <button onClick={handleLogout}>Abmelden</button>
         </div>
         {children}
-      </>
-    );
+      </SessionContext.Provider>
+    )
   }
 
   return (
@@ -178,16 +98,10 @@ export default function AuthGate({ children }: Props) {
         <h1>KRONENREICH</h1>
         <p className="auth-subtitle">Dein Reich wartet auf dich.</p>
 
-        <h2>
-          {forgotMode
-            ? 'Passwort zurücksetzen'
-            : registerMode
-              ? 'Konto erstellen'
-              : 'Anmelden'}
-        </h2>
+        <h2>{registerMode ? 'Konto erstellen' : 'Anmelden'}</h2>
 
         <form onSubmit={handleSubmit}>
-          {registerMode && !forgotMode && (
+          {registerMode && (
             <label>
               Spielername
               <input
@@ -197,7 +111,7 @@ export default function AuthGate({ children }: Props) {
                 minLength={3}
                 maxLength={20}
                 required
-                placeholder="Dein Name im Königreich"
+                placeholder="Dein Name"
               />
             </label>
           )}
@@ -213,75 +127,36 @@ export default function AuthGate({ children }: Props) {
             />
           </label>
 
-          {!forgotMode && (
-            <label>
-              Passwort
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                minLength={6}
-                required
-                placeholder="Mindestens 6 Zeichen"
-              />
-            </label>
-          )}
+          <label>
+            Passwort
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={6}
+              required
+              placeholder="Mindestens 6 Zeichen"
+            />
+          </label>
 
           <button className="auth-submit" type="submit" disabled={busy}>
-            {busy
-              ? 'Bitte warten ...'
-              : forgotMode
-                ? 'Reset-E-Mail anfordern'
-                : registerMode
-                  ? 'Kostenlos registrieren'
-                  : 'Einloggen'}
+            {busy ? 'Bitte warten ...' : registerMode ? 'Kostenlos registrieren' : 'Einloggen'}
           </button>
         </form>
 
         {message && <p className="auth-message">{message}</p>}
 
-        {!registerMode && !forgotMode && (
-          <button
-            className="auth-switch"
-            type="button"
-            onClick={() => {
-              setForgotMode(true);
-              setMessage('');
-              setPassword('');
-            }}
-          >
-            Passwort vergessen?
-          </button>
-        )}
-
         <button
           className="auth-switch"
           type="button"
           onClick={() => {
-            setRegisterMode(!registerMode);
-            setForgotMode(false);
-            setMessage('');
-            setPassword('');
+            setRegisterMode((current) => !current)
+            setMessage('')
           }}
         >
-          {registerMode
-            ? 'Du hast schon ein Konto? Anmelden'
-            : 'Noch kein Konto? Jetzt registrieren'}
+          {registerMode ? 'Bereits Spieler? Anmelden' : 'Noch kein Konto? Jetzt registrieren'}
         </button>
-
-        {forgotMode && (
-          <button
-            className="auth-switch"
-            type="button"
-            onClick={() => {
-              setForgotMode(false);
-              setMessage('');
-            }}
-          >
-            Zurück zur Anmeldung
-          </button>
-        )}
       </section>
     </main>
-  );
+  )
 }

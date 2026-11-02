@@ -4,22 +4,24 @@
 
 Ziel ist ein faires Open-Source-Spiel ohne Pay-to-Win: Fortschritt soll durch Planung, Ausbau, Handel und Strategie entstehen – nicht durch Echtgeldvorteile.
 
-> **Status:** früher Entwicklungsstand. Das Projekt ist noch kein vollständiges oder öffentlich gehostetes Spiel. Funktionen, Datenmodell und Spielregeln können sich ändern.
+> **Status:** lokaler, spielbarer Prototyp. Anmeldung und Spielstände werden nur im Browser gespeichert; es gibt derzeit kein echtes Benutzerkonto, keinen Multiplayer-Server und keine serverseitige Validierung.
 
 ## Aktueller Stand
 
-Bereits begonnen bzw. vorhanden:
+Im lokalen Prototyp vorhanden:
 
-- Registrierung und Anmeldung über Supabase
+- Lokale Profilregistrierung und Anmeldung als Prototyp
+- Profilgebundene Spielstände in `localStorage`
 - Dorfansicht mit Rohstoffen und Gebäuden
 - Gebäudeausbau und Bauzeiten
 - Bevölkerungs- und Lagerkapazität
 - Truppenübersicht und Rekrutierung
-- Erste technische Grundlagen für Truppenbewegungen und Angriffe
+- Weltkarten-Prototyp mit Barbarendörfern und Truppenbewegungen
 
 Noch in Arbeit bzw. geplant:
 
-- Weltkarte und Weltgenerierung
+- Serverbasierte Authentifizierung und persistente Welt
+- Erweiterte Weltgenerierung und Verteilung von Spielerdörfern
 - Verteilung von Spieler- und Barbarendörfern
 - vollständige serverseitige Kampfberechnung
 - Berichte und Rückkehr überlebender Truppen
@@ -30,11 +32,16 @@ Noch in Arbeit bzw. geplant:
 - React
 - TypeScript
 - Vite
-- Supabase (Authentifizierung und Backend)
+- Supabase (vorgesehenes Backend, aktuell noch nicht in den lokalen Spielablauf integriert)
+
+## Dokumentation
+
+- [PROJECT_STATUS.md](PROJECT_STATUS.md) – Aktueller Entwicklungsstand und nächste Schritte
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) – Architekturentscheidungen und Sicherheitsmodell
 
 ## Lokal starten
 
-Voraussetzungen: eine aktuelle Node.js-Version und npm sowie ein eigenes Supabase-Projekt.
+Voraussetzungen: eine aktuelle Node.js-Version und npm. Ein Supabase-Projekt wird für den lokalen Prototyp nicht benötigt.
 
 1. Repository klonen:
 
@@ -49,14 +56,7 @@ Voraussetzungen: eine aktuelle Node.js-Version und npm sowie ein eigenes Supabas
    npm install
    ```
 
-3. Datei `.env.local` im Ordner `client` anlegen und die Werte deines eigenen Supabase-Projekts eintragen:
-
-   ```env
-   VITE_SUPABASE_URL=https://DEIN-PROJEKT.supabase.co
-   VITE_SUPABASE_ANON_KEY=DEIN_SUPABASE_ANON_KEY
-   ```
-
-4. Entwicklungsserver starten:
+3. Entwicklungsserver starten:
 
    ```bash
    npm run dev
@@ -68,7 +68,7 @@ Für einen Produktions-Build:
 npm run build
 ```
 
-**Wichtig:** Niemals Service-Role-Keys, Passwörter oder andere geheime Zugangsdaten committen. Für lokale Tests ein eigenes Supabase-Projekt verwenden. Die Datenbank benötigt außerdem das zum aktuellen Code passende Schema und die benötigten Funktionen (RPCs); eine vollständige automatische Datenbankinstallation ist derzeit noch nicht dokumentiert.
+**Wichtig:** Die lokale Anmeldung ist keine sichere Authentifizierung: Die Eingaben werden nicht serverseitig geprüft. Verwende keine echten oder wiederverwendeten Passwörter. Spielstände liegen im Browser und können dort gelöscht oder verändert werden. Supabase-Schema und RPCs müssen vor einem Multiplayer- oder Produktivbetrieb implementiert werden.
 
 ## Mithelfen
 
