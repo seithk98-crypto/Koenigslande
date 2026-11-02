@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: Phase F lokal geprüft; gehostete Umgebung und Produktionsbetrieb nicht geprüft.
+Stand: Phase F lokal geprüft; Frankfurt-Supabase mit allen 13 Migrationen eingerichtet. Auth- und Dorf-Smoke-Tests im gehosteten Projekt teilweise bestätigt; Livebetrieb noch nicht freigegeben.
 
 ## Phase A – Fundament
 
@@ -88,9 +88,9 @@ Stand: Phase F lokal geprüft; gehostete Umgebung und Produktionsbetrieb nicht g
 
 ### Migrationen
 
-- Phase-E-Migrationen `202611020008` bis `202611020013` sind additive SQL-Änderungen. Sie müssen für gehostete Umgebungen manuell geprüft und angewendet werden.
-- Migrationen `008` bis `013` wurden lokal angewendet; die Anwendung hat keine vorhandenen Spieler- oder Dorfdaten zurückgesetzt.
-- Keine gehostete oder produktive Datenbank wurde verändert.
+- Phase-E-Migrationen `202611020008` bis `202611020013` sind additive SQL-Änderungen.
+- Migrationen `008` bis `013` wurden lokal und im neuen Frankfurt-Projekt angewendet. Das Remote-Projekt war vor dem Aufbau leer; es wurden keine vorhandenen Spieler- oder Dorfdaten zurückgesetzt.
+- Das frühere Irland-Projekt ist in der aktuellen CLI-Projektliste nicht sichtbar; es wurde nicht verändert, sein aktueller Status ist unbekannt.
 
 ### Verifikation
 
@@ -99,11 +99,11 @@ Stand: Phase F lokal geprüft; gehostete Umgebung und Produktionsbetrieb nicht g
 - `npm run lint`: erfolgreich.
 - `npm run build`: TypeScript und Vite erfolgreich; Vite meldet nur den bestehenden Hinweis auf einen JavaScript-Chunk über 500 kB.
 - `npm run test:db`: TAP-Ausgabe meldete 102/102 Tests erfolgreich. Der Supabase-CLI-Prozess lieferte anschließend in dieser Umgebung Exit 130 bzw. brach in einem Folgelauf beim fehlenden `~/.supabase/profile` ab; die pgTAP-Ergebnisse waren grün, der CLI-Exitcode ist jedoch nicht zuverlässig.
-- Browserdarstellung auf mehreren Geräten und gehostete Supabase-Konfiguration sind nicht geprüft.
+- Browserdarstellung auf mehreren Geräten und Lastverhalten sind nicht geprüft.
 
 ## Nächste Phasen
 
-- Produktionsvorbereitung: gehostete Migrationen und Auth-Konfiguration prüfen, Browser-/Mobilansichten testen und Lasttests gegen eine repräsentative Datenmenge ergänzen.
+- Produktionsvorbereitung: eigenen SMTP-Anbieter einrichten, E-Mail-Bestätigung wieder aktivieren, Frontend mit der produktiven URL deployen und Backup-/Betriebskonzept festlegen. Laut Nutzerangabe hat der Free-Tarif kein PITR.
 - Bekannte Grenzen: Es gibt keinen periodischen Hintergrund-Scheduler; fällige Aufträge/Bewegungen werden beim nächsten authentifizierten RPC verarbeitet. Diplomatiebeziehungen werden gespeichert und angezeigt, verändern aber derzeit nicht die Kampfregeln. Ranglisten zeigen jeweils höchstens 100 Einträge ohne Seitenwechsel.
 
 ## Phase F – Qualität, Sicherheit, Balance und Performance
@@ -123,8 +123,12 @@ Stand: Phase F lokal geprüft; gehostete Umgebung und Produktionsbetrieb nicht g
 - `npm run test:integration`: Phasen A–E erfolgreich, inklusive paralleler Requests, Idempotenz, RLS, Kampfauflösung, Mehrdorf, Allianzen, Nachrichten und Ranglisten.
 - `npm run lint`: erfolgreich.
 - `npm run build`: TypeScript und Vite erfolgreich. Der initiale Chunk ist unter 500 kB; die vorherige Vite-Warnung tritt nicht mehr auf.
-- Keine gehostete Supabase-Instanz, kein Mehrgeräte-Browsercheck und kein repräsentativer Lasttest wurden durchgeführt.
-- Phase F fügt keine Datenbankmigration hinzu. Für gehostete Umgebungen müssen die vorhandenen Migrationen `202611020001` bis `202611020013` weiterhin einzeln geprüft und ausdrücklich angewendet werden.
+- Frankfurt-Projekt `uckzfsfrxqmicpaongbi` in `eu-central-1`: alle 13 Migrationen angewendet; 20 Anwendungstabellen mit aktivem RLS, 60 Funktionen, 4 benutzerdefinierte Trigger, 43 Indizes und 3 Policies geprüft.
+- Remote-Grants: keine unerwarteten Tabellenrechte, `app_private` für Clientrollen unzugänglich. Ein fremder Dorfabruf wurde mit `P0002` abgewiesen.
+- Zwei Auth-Konten besitzen je ein Profil, ein Dorf, einen Ressourcenbestand und 12 Gebäude in derselben Welt. Erster Login und Session-Erhalt nach Neuladen wurden vom Nutzer bestätigt.
+- E-Mail-Bestätigung ist aktuell temporär deaktiviert; Signup ist aktiv. SMTP ist nicht eingerichtet/verifiziert. Vor Livebetrieb Bestätigung wieder einschalten und SMTP konfigurieren.
+- Remote-Bau-/Rekrutierungs-Race-Tests, ein zweiter unabhängiger Browserkontext, Frontend-Hosting und repräsentativer Lasttest wurden nicht durchgeführt.
+- Phase F fügt keine Datenbankmigration hinzu; alle bestehenden Migrationen `202611020001` bis `202611020013` sind auf Frankfurt angewendet.
 
 Der ausführliche Prüf- und Abschlussbericht steht in [docs/PHASE_F_QUALITY.md](docs/PHASE_F_QUALITY.md).
 
@@ -140,4 +144,4 @@ npm run lint
 npm run build
 ```
 
-Die Migrationen der Phasen B bis E müssen für ein gehostetes Projekt manuell geprüft und angewendet werden. Hier wurde keine fremde oder produktive Datenbank verändert.
+Die Migrationen `202611020001` bis `202611020013` sind im Frankfurt-Projekt angewendet. Auth-Bestätigung bleibt für Tests vorübergehend deaktiviert; vor Livebetrieb SMTP, Redirect-URLs und Bestätigung aktivieren. Details: [docs/SUPABASE_DEPLOYMENT.md](docs/SUPABASE_DEPLOYMENT.md).

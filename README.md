@@ -1,7 +1,10 @@
 # Königslande Next
+
+Ein eigenständiger Neustart des mittelalterlichen Browser-Strategiespiels. Dieses Projekt liegt getrennt vom bisherigen Repository in `/workspaces/Koenigslande-Next`.
+
 ## Stand
 
-Phase A bis E sind umgesetzt: Supabase-Authentifizierung, ein gemeinsames PostgreSQL-Weltmodell, serverseitige Wirtschaft und Rekrutierung, Angriffe/Kämpfe sowie Multiplayer mit mehreren Dörfern, Profilen, Allianzen, Diplomatie, Nachrichten und Ranglisten. Kritische Spielaktionen und Kampfverarbeitung erfolgen serverseitig; es gibt keine lokale Fake-Anmeldung oder im Browser simulierte Spielökonomie.
+Phase A bis F sind umgesetzt: Supabase-Authentifizierung, ein gemeinsames PostgreSQL-Weltmodell, serverseitige Wirtschaft und Rekrutierung, Angriffe/Kämpfe sowie Multiplayer mit mehreren Dörfern, Profilen, Allianzen, Diplomatie, Nachrichten und Ranglisten. Kritische Spielaktionen und Kampfverarbeitung erfolgen serverseitig; es gibt keine lokale Fake-Anmeldung oder im Browser simulierte Spielökonomie.
 
 Die verschiebbare/zoombare Karte rendert begrenzte Datenbankabfragen. Die einzelnen Phasen sind in [PROJECT_STATUS.md](PROJECT_STATUS.md) dokumentiert. SQL, Serverregeln und manuelle Migration: [Phase B – Wirtschaft](docs/PHASE_B_ECONOMY.md), [Phase C – Militär](docs/PHASE_C_MILITARY.md), [Phase D – Kampf](docs/PHASE_D_COMBAT.md), [Phase E – Multiplayer](docs/PHASE_E_MULTIPLAYER.md) und [Phase F – Qualität, Sicherheit und Performance](docs/PHASE_F_QUALITY.md).
 
@@ -15,7 +18,7 @@ Die verschiebbare/zoombare Karte rendert begrenzte Datenbankabfragen. Die einzel
 - Server-RPCs für Truppenbewegungen, Angriffe, Spionage, Kampfberichte, Beute und Rückkehr
 - Vitest für Client-Logik und pgTAP für Datenbankrechte/Invarianten
 
-Architektur und Berechtigungen: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Architektur und Berechtigungen: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Anleitung für gehostete Supabase- und Frontend-Bereitstellung: [docs/SUPABASE_DEPLOYMENT.md](docs/SUPABASE_DEPLOYMENT.md).
 
 ## Lokal starten
 
@@ -55,4 +58,4 @@ npm run build
 
 Der Integrationstest legt ein zufälliges Testkonto an und löscht es danach samt Dorf wieder. Er benötigt den laufenden lokalen Supabase-Stack.
 
-Für Anmeldung gegen eine echte gehostete Datenbank müssen die Migrationen dort separat angewendet und die Auth-Redirect-URLs des Projekts konfiguriert werden. Eine Verbindung zu einem produktiven Supabase-Projekt wurde hier nicht getestet.
+Das lokale Koenigslande-Projekt ist aktuell mit dem gehosteten Frankfurt-Projekt verbunden; Details stehen in [docs/SUPABASE_DEPLOYMENT.md](docs/SUPABASE_DEPLOYMENT.md). Für Livebetrieb müssen noch SMTP und Produktions-Redirects konfiguriert, die temporär deaktivierte E-Mail-Bestätigung wieder eingeschaltet und das Frontend gehostet werden. `.env.local` bleibt lokal und darf nicht committet werden.
