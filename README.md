@@ -1,91 +1,61 @@
-# Königslande
+# Königslande Next
 
-**Königslande** ist ein kostenloses, browserbasiertes Mittelalter-Strategiespiel, inspiriert von klassischen Dorf- und Aufbauspielen wie *Die Stämme*. Das Projekt befindet sich in aktiver Entwicklung.
+Ein eigenständiger Neustart des mittelalterlichen Browser-Strategiespiels. Dieses Projekt liegt getrennt vom bisherigen Repository in `/workspaces/Koenigslande-Next`.
 
-Ziel ist ein faires Open-Source-Spiel ohne Pay-to-Win: Fortschritt soll durch Planung, Ausbau, Handel und Strategie entstehen – nicht durch Echtgeldvorteile.
+## Stand
 
-> **Status:** lokaler, spielbarer Prototyp. Anmeldung und Spielstände werden nur im Browser gespeichert; es gibt derzeit kein echtes Benutzerkonto, keinen Multiplayer-Server und keine serverseitige Validierung.
+Phase A bis E sind umgesetzt: Supabase-Authentifizierung, ein gemeinsames PostgreSQL-Weltmodell, serverseitige Wirtschaft und Rekrutierung, Angriffe/Kämpfe sowie Multiplayer mit mehreren Dörfern, Profilen, Allianzen, Diplomatie, Nachrichten und Ranglisten. Kritische Spielaktionen und Kampfverarbeitung erfolgen serverseitig; es gibt keine lokale Fake-Anmeldung oder im Browser simulierte Spielökonomie.
 
-## Aktueller Stand
+Die verschiebbare/zoombare Karte rendert begrenzte Datenbankabfragen. Die einzelnen Phasen sind in [PROJECT_STATUS.md](PROJECT_STATUS.md) dokumentiert. SQL, Serverregeln und manuelle Migration: [Phase B – Wirtschaft](docs/PHASE_B_ECONOMY.md), [Phase C – Militär](docs/PHASE_C_MILITARY.md), [Phase D – Kampf](docs/PHASE_D_COMBAT.md), [Phase E – Multiplayer](docs/PHASE_E_MULTIPLAYER.md) und [Phase F – Qualität, Sicherheit und Performance](docs/PHASE_F_QUALITY.md).
 
-Im lokalen Prototyp vorhanden:
+## Technik
 
-- Lokale Profilregistrierung und Anmeldung als Prototyp
-- Profilgebundene Spielstände in `localStorage`
-- Dorfansicht mit Rohstoffen und Gebäuden
-- Gebäudeausbau und Bauzeiten
-- Bevölkerungs- und Lagerkapazität
-- Truppenübersicht und Rekrutierung
-- Weltkarten-Prototyp mit Barbarendörfern und Truppenbewegungen
+- React und TypeScript mit Vite
+- Supabase Auth für echte Benutzeridentität
+- PostgreSQL als gemeinsame, dauerhafte Weltquelle
+- RLS ohne direkte Client-Schreibrechte auf kritische Spieltabellen
+- Authentifizierte RPCs für Dorfgründung, eigenes Dorf und begrenzte Kartenregionen
+- Server-RPCs für Truppenbewegungen, Angriffe, Spionage, Kampfberichte, Beute und Rückkehr
+- Vitest für Client-Logik und pgTAP für Datenbankrechte/Invarianten
 
-Noch in Arbeit bzw. geplant:
-
-- Serverbasierte Authentifizierung und persistente Welt
-- Erweiterte Weltgenerierung und Verteilung von Spielerdörfern
-- Verteilung von Spieler- und Barbarendörfern
-- vollständige serverseitige Kampfberechnung
-- Berichte und Rückkehr überlebender Truppen
-- Handel, Stämme/Allianzen und weitere Spielsysteme
-
-## Technologie
-
-- React
-- TypeScript
-- Vite
-- Supabase (vorgesehenes Backend, aktuell noch nicht in den lokalen Spielablauf integriert)
-
-## Dokumentation
-
-- [PROJECT_STATUS.md](PROJECT_STATUS.md) – Aktueller Entwicklungsstand und nächste Schritte
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) – Architekturentscheidungen und Sicherheitsmodell
+Architektur und Berechtigungen: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Lokal starten
 
-Voraussetzungen: eine aktuelle Node.js-Version und npm. Ein Supabase-Projekt wird für den lokalen Prototyp nicht benötigt.
-
-1. Repository klonen:
-
-   ```bash
-   git clone https://github.com/seithk98-crypto/medieval-srategy.git
-   cd medieval-srategy/client
-   ```
-
-2. Abhängigkeiten installieren:
-
-   ```bash
-   npm install
-   ```
-
-3. Entwicklungsserver starten:
-
-   ```bash
-   npm run dev
-   ```
-
-Für einen Produktions-Build:
+Voraussetzungen: Node.js/npm, Docker und die Supabase CLI.
 
 ```bash
+npm install
+npx supabase start --exclude vector
+```
+
+Lege `.env.local` im Projektstamm an. Verwende den `ANON_KEY` aus `npx supabase status --output env`; der Schlüssel ist der öffentliche lokale Client-Schlüssel. Die lokale URL bleibt `/supabase` und wird vom Vite-Devserver same-origin an den Supabase-Port weitergeleitet. Niemals `SERVICE_ROLE_KEY` oder `SECRET_KEY` in Vite-Variablen eintragen.
+
+```env
+VITE_SUPABASE_URL=/supabase
+VITE_SUPABASE_ANON_KEY=DEIN_LOKALER_ANON_KEY
+```
+
+Dann:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
+Die Migrationen erzeugen eine feste Welt mit 40.401 Geländefeldern und neun persistenten, anfangs neutralen Dörfern. Neue, ausstehende Migrationen werden lokal mit `npx supabase db push --local` angewendet; der Befehl setzt keine vorhandenen lokalen Spielerdaten zurück. Für ein gehostetes Projekt müssen die SQL-Dateien separat geprüft und ausdrücklich angewendet werden. Keine Migration wird automatisch beim App-Start ausgeführt.
+
+Im lokalen Supabase-Projekt sind E-Mail-Bestätigungen deaktiviert, damit der Auth-Ablauf ohne SMTP-Konto testbar ist. Eine gehostete Instanz muss ihre E-Mail-Bestätigung und Redirect-URLs selbst konfigurieren.
+
+## Prüfen
+
+```bash
+npm test
+npm run test:db
+npm run test:integration
+npm run lint
 npm run build
 ```
 
-**Wichtig:** Die lokale Anmeldung ist keine sichere Authentifizierung: Die Eingaben werden nicht serverseitig geprüft. Verwende keine echten oder wiederverwendeten Passwörter. Spielstände liegen im Browser und können dort gelöscht oder verändert werden. Supabase-Schema und RPCs müssen vor einem Multiplayer- oder Produktivbetrieb implementiert werden.
+Der Integrationstest legt ein zufälliges Testkonto an und löscht es danach samt Dorf wieder. Er benötigt den laufenden lokalen Supabase-Stack.
 
-## Mithelfen
-
-Beiträge von Entwicklerinnen und Entwicklern sind willkommen – besonders bei:
-
-- React-/TypeScript-Frontend
-- Supabase, SQL und sicherer serverseitiger Spiellogik
-- Weltkarte und prozeduraler Weltgenerierung
-- Balancing und Spielmechaniken
-- Tests, Dokumentation und UI/UX
-
-Bitte zuerst ein [Issue](https://github.com/seithk98-crypto/medieval-srategy/issues) eröffnen oder dort nachsehen, woran bereits gearbeitet wird. Für Änderungen anschließend einen Pull Request erstellen. Lies dazu [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Projektstatus und Kontakt
-
-Das Projekt wird derzeit von einer kleinen Initiative aufgebaut. Ideen, konstruktive Rückmeldungen und Hilfe sind ausdrücklich willkommen. Bitte beachte, dass noch nicht alle geplanten Funktionen umgesetzt sind.
-
----
-
-**Sprache:** Deutsch (weitere Sprachen können später ergänzt werden).
+Für Anmeldung gegen eine echte gehostete Datenbank müssen die Migrationen dort separat angewendet und die Auth-Redirect-URLs des Projekts konfiguriert werden. Eine Verbindung zu einem produktiven Supabase-Projekt wurde hier nicht getestet.

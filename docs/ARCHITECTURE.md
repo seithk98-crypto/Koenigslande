@@ -1,66 +1,51 @@
-# Architecture Overview
+# Architektur
 
-## Goal
+## Phase-A-Ziel
 
-Königslande is designed as a persistent multiplayer strategy game. The architecture prioritizes a single trusted backend, clear ownership boundaries, and predictable gameplay rules.
+Der Browser zeigt Spielzustand an und sendet Aktionen. PostgreSQL ist die gemeinsame Quelle für Identität, Welt, Siedlungen, Startrohstoffe und Gebäude. Authentifizierung läuft über Supabase Auth. Ohne Projektkonfiguration zeigt der Client einen Setup-Status; er erzeugt keine Demo-Sitzung und keine Ersatzwelt.
 
-## Frontend
+## Datenmodell
 
-- React 19
-- TypeScript
-- Vite
-- CSS custom styling for the medieval interface
+- `profiles`: UUID aus `auth.users`; der Insert-Trigger legt einen öffentlichen Spielernamen an.
+- `worlds`: versionierbare gemeinsame Spielwelten.
+- `world_tiles`: unveränderliches Raster mit festen Koordinaten und deterministisch gesetztem Gelände.
+- `villages`: Besitzer, Name, Punkte und Weltkoordinate. Neutrale Dörfer haben keinen Besitzer.
+- `village_resources`: Ressourcenbestand und Lagerkapazität pro Dorf.
+- `village_buildings`: normalisierte Gebäudestufen pro Dorf.
 
-The production frontend should render data, collect user input, and send actions to the backend. In the current prototype, the browser owns local game state; this is intentionally not authoritative or suitable for multiplayer.
+Die erste Migration erzeugt Welt I mit 201 × 201 Feldern und neun festen neutralen Dörfern. Sie sind Datenbankzeilen und keine im Client erfundenen Kartenmarker. Das Raster ist in einem Index für begrenzte rechteckige Regionsabfragen abgelegt.
 
-## Backend
+## Vertrauens- und Rechte-Grenze
 
-- Supabase Auth for identity management
-- PostgreSQL as the source of truth
-- Database RPC functions for gameplay logic
+RLS ist auf allen Spieltabellen aktiviert. `anon` und `authenticated` haben keine direkten Tabellenrechte auf Welt, Dörfer, Ressourcen oder Gebäude. `profiles` ist nur für den eigenen Benutzer les- und änderbar.
 
-Key idea: the browser never decides resource counts, building completion, recruitment, or combat outcomes. A server-side function validates the action and updates the database atomically.
+| Funktion | Rolle | Wirkung und Prüfung |
+| --- | --- | --- |
+| `handle_new_user()` | Trigger auf `auth.users` | Erzeugt ein Profil; Suchpfad ist festgelegt. |
+| `get_my_starting_village()` | `authenticated` | Liefert nur ein Dorf mit `owner_id = auth.uid()`. |
+| `found_starting_village(text)` | `authenticated` | Validiert Namen und Identität, serialisiert Spawn-Vergabe mit Advisory Lock und schreibt Dorf, Startbestand sowie Gebäude in einer Transaktion. Wiederholte Aufrufe liefern das bestehende Dorf. |
+| `get_world_map(int,int,int)` | `authenticated` | Liefert nur eine begrenzte Rasterregion und öffentliche Dorfinformationen; Radius ist auf 4–20 begrenzt. |
 
-## Why this architecture
+Die RPCs laufen als `SECURITY DEFINER`, haben einen festen `search_path`, prüfen `auth.uid()` selbst und sind für `anon`/`public` nicht ausführbar. Das interne Payload-Hilfsverfahren ist nicht an Clientrollen freigegeben. Dorfgründung verwendet zusätzlich einen transaktionsweiten Advisory Lock; ein Unique Constraint auf Weltkoordinaten schützt die letzte Integritätsgrenze.
 
-This pattern is suitable for a live strategy game because it is:
+## Karte
 
-- easy to scale with a managed Postgres database,
-- robust for row-level security and ownership validation,
-- consistent with multiplayer strategy game requirements,
-- compatible with offline progress and scheduled processing later in the project.
+Die Oberfläche lädt bei Mittelpunkt-/Zoomwechsel eine begrenzte Region per `get_world_map`. Kachelkoordinaten steuern ihre feste Position im Raster; panning ändert die Weltkoordinate, zooming ändert die serverseitige Abfragefläche. Dorfdetails stammen aus derselben Antwort. Es gibt keine Client-Generatoren für Dörfer oder Besitzer.
 
-## Expected data model direction
+## Zeit und kommende Phasen
 
-The project should evolve toward a table structure such as:
+Phase B speichert den letzten Wirtschaftszeitpunkt pro Dorf und gleicht Produktion bei authentifizierten RPC-Aufrufen serverseitig ab. Die Rohstoffberechnung behält Bruchteile bei, beachtet das Lagerlimit und verarbeitet Bauabschlüsse chronologisch, damit Gebäudeeffekte erst ab ihrem tatsächlichen Fertigstellungszeitpunkt wirken. `construction_queue` speichert serverberechnete `started_at`-/`completes_at`-Zeitpunkte; der Upgrade-RPC sperrt das Dorf, zieht Kosten atomar ab und erkennt Wiederholungen anhand eines Request-UUIDs. Details und manuelle Migration sind in [PHASE_B_ECONOMY.md](./PHASE_B_ECONOMY.md) beschrieben.
 
-- users / profiles
-- villages
-- village_buildings
-- village_resources
-- units
-- unit_training_queue
-- troop_movements
-- combat_reports
-- world_regions or world_tiles
-- alliances and alliance_memberships (later)
+Phase C hält Balancingdaten in `app_private.unit_definitions`, Bestände in `village_troops` und Aufträge in `recruitment_queue`. Ausbildungszeiten und Einrichtungsvoraussetzungen werden serverseitig berechnet; Rohstoffe und Bevölkerung werden beim Start unter Sperre des Dorfs reserviert. Jede Queue-Zeile bleibt dorfgebunden. `get_village_state(uuid)` prüft den Besitz und rechnet fällige Ausbildungen offline nach. `release_troops(uuid,text,int)` gibt Bevölkerung für aufgelöste Einheiten frei. Details sind in [PHASE_C_MILITARY.md](./PHASE_C_MILITARY.md) festgehalten.
 
-## Security model
+Phase D speichert Bewegungen in `troop_movements` und betrachtergetrennte Kampf-/Spähberichte in `combat_reports`. `send_troop_movement(uuid,uuid,text,jsonb,uuid)` prüft Besitz, Truppenbestand, Ziel und Bewegungstyp serverseitig, berechnet Reisezeiten und reserviert Truppen in einer Transaktion. `get_movement_overview()` verarbeitet fällige Bewegungen und gibt nur berechtigte Berichte zurück. Kampf, Verluste, Bevölkerungsanpassung, Beute und Rückkehr sind serverseitig und einmalig; Details und die dokumentierte Formel stehen in [PHASE_D_COMBAT.md](./PHASE_D_COMBAT.md).
 
-- User identity comes from Supabase auth.
-- User ownership is checked from session context or village ownership.
-- RPC functions validate village ownership, resource sufficiency, and unit availability.
-- Sensitive data must be protected behind row-level security.
-- Private combat reports and player data must be restricted by ownership.
+Phase E ergänzt eindeutige öffentliche Profile, Mehrdorf-Verwaltung, Allianzen, Rollen, Einladungen, Diplomatie, private und Allianz-Nachrichten, Benachrichtigungen und Ranglisten. Soziale Daten werden über geschützte RPCs gelesen/geschrieben; nur RLS-gefilterte, inhaltsfreie Benachrichtigungsereignisse sind für Realtime-SELECT freigegeben. `found_additional_village(uuid,text)` und der kampfgebundene Besitzerwechsel beachten die zentralen Expansionseinstellungen und serialisieren die Dorfobergrenze. Mehr Details und die Migrationen `202611020008` bis `202611020013`: [PHASE_E_MULTIPLAYER.md](./PHASE_E_MULTIPLAYER.md).
 
-## Development principles
+Der Browser zeigt Server-Countdowns und fragt den Dorfstand regelmäßig ab; er autorisiert weder Produktion, Abbuchung, Fertigstellung noch Kampfergebnisse. Ein separater Scheduler für korrekten Offline-Fortschritt ist nicht erforderlich, da verstrichene Zeit beim nächsten RPC nachgerechnet wird. Eine kontinuierliche Aktualisierung ohne aktive Spieleranfragen ist nicht enthalten.
 
-- Separate UI from world logic.
-- Treat the database as the single source of truth.
-- Keep critical logic server-side.
-- Add features in phases rather than in large monolithic changes.
-- Ensure every phase has a local verification step before moving on.
+Die Gemeinschaftsansicht wird erst beim Öffnen als eigener JavaScript-Chunk geladen. Ihre Übersicht wird gegen überlappende Refreshes geschützt; Ranglisten werden nur im aktiven Ranglisten-Tab abgefragt und sind serverseitig auf jeweils 100 Einträge begrenzt. Es gibt noch keine Seitennavigation für größere Ranglisten. Details zu Prüfungen, bekannten Grenzen und Verifikation sind in [PHASE_F_QUALITY.md](./PHASE_F_QUALITY.md) dokumentiert.
 
-## Current implementation status
+## Lokale und produktive Umgebungen
 
-The project currently contains a local profile gate, profile-specific browser saves, a starting-village flow, and a map prototype. The local profile gate does not verify credentials. Supabase Auth, persistent database state, server-side game rules, and production-grade multiplayer remain unimplemented.
+`supabase/config.toml` und `supabase/migrations` ermöglichen reproduzierbare lokale Entwicklung. Im Browser wird `/supabase` same-origin über den Vite-Devserver auf den lokalen Supabase-API-Port weitergeleitet; dadurch hängt Anmeldung nicht von einem separat freigegebenen Codespace-Port ab. Die Migration, pgTAP-Berechtigungstests und ein Auth-/RPC-Integrationstest liefen gegen den lokalen Supabase-Stack. Eine gehostete Supabase-Instanz, E-Mail-Zustellung und produktive Betriebs-/Backup-Konfiguration sind noch nicht validiert.
