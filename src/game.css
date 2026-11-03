@@ -505,3 +505,18 @@ a { color: inherit; }
   .setup-screen { padding: 36px 25px; }
   .setup-screen h1 { font-size: 36px; }
 }
+
+/* World map coordinate search */
+.map-heading-tools { display: grid; justify-items: end; gap: 8px; }
+.map-coordinate-search { display: flex; align-items: center; gap: 5px; }
+.map-coordinate-search input { width: 142px; min-width: 0; height: 31px; padding: 0 8px; border: 1px solid rgba(51,58,43,.22); color: var(--ink); background: rgba(255,255,255,.58); font-size: 10px; }
+.map-coordinate-search input::placeholder { color: #898675; }
+.map-coordinate-search button { height: 31px; padding: 0 10px; border: 1px solid #354636; color: #f4f0e4; background: #354636; font-size: 10px; }
+.map-coordinate-search button:hover { background: #49604a; }
+.map-search-error { margin: -10px 0 12px; color: var(--danger); font-size: 11px; text-align: right; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 680px) {
+  .map-heading-tools { gap: 6px; }
+  .map-coordinate-search input { width: 116px; }
+  .map-coordinate-search button { padding-inline: 7px; }
+}
