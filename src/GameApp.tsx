@@ -188,7 +188,8 @@ export default function GameApp({ session }: Props) {
         else {
           const result = (data ?? []) as WorldTile[]
           setTiles(result)
-          setSelectedTile((current) => result.find((tile) => tile.village_id === currentVillageId)
+          setSelectedTile((current) => result.find((tile) => tile.x === center.x && tile.y === center.y)
+            ?? result.find((tile) => tile.village_id === currentVillageId)
             ?? result.find((tile) => tile.village_id === current?.village_id)
             ?? null)
           setMapError('')
