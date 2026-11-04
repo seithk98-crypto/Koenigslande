@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type PointerEvent } from 'react'
-import { ArrowLeftRight, Castle, LocateFixed, Minus, Mountain, Plus, TreePine, Waves } from 'lucide-react'
+import { ArrowLeftRight, Castle, LocateFixed, Minus, Mountain, Plus, TreePine, Waves, House, Shield, Swords } from 'lucide-react'
 import type { WorldTile } from './types'
 import { getTileGridPosition } from './worldMapModel'
 
@@ -94,8 +94,14 @@ export default function WorldMap({
                       : ' player-settlement'
                 : ''
               const position = getTileGridPosition(tile.x, tile.y, center, radius)
-              return <button type="button" key={`${tile.x}:${tile.y}`} className={`map-tile terrain-${tile.terrain}${settlement}${tile.village_id ? ' has-settlement' : ''}${selected ? ' selected' : ''}`} style={{ gridColumnStart: position.column, gridRowStart: position.row }} onClick={() => onSelectTile(tile)} title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`} aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`} aria-pressed={selected}>
-                {tile.village_id ? <><span className="settlement-marker">{isOwnVillage ? <Castle size={20} /> : tile.is_barbarian ? <span className="barbarian-mark">✦</span> : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? <Castle size={17} /> : <span className="player-mark">◆</span>}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainIcon className="terrain-mark" size={13} /> : null}
+              return <button type="button" key={`${tile.x}:${tile.y}`} className={`map-tile terrain-${tile.terrain}${settlement}${tile.village_id ? ' has-settlement' : ''}${selected ? ' selected' : ''}`} style={{
+                  gridColumnStart: position.column,
+                  gridRowStart: position.row,
+                  backgroundPosition: `${((tile.x + 100) / 200) * 100}% ${((100 - tile.y) / 200) * 100}%`,
+                  backgroundSize: `${(201 / boardSize) * 100}% ${(201 / boardSize) * 100}%`,
+                  backgroundRepeat: 'no-repeat',
+                }} onClick={() => onSelectTile(tile)} title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`} aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`} aria-pressed={selected}>
+                {tile.village_id ? <><span className="settlement-marker">{isOwnVillage ? <Castle size={20} /> : tile.is_barbarian ? <Swords size={17} /> : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? <Shield size={17} /> : <House size={17} />}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainIcon className="terrain-mark" size={13} /> : null}
                 <span className="tile-coordinate">{tile.x}|{tile.y}</span>
               </button>
             })}
@@ -107,6 +113,22 @@ export default function WorldMap({
         <div className="map-controls"><span>ANSICHT</span><div className="zoom-control"><button type="button" onClick={() => onRadiusChange(Math.min(20, radius + 2))} disabled={radius >= 20} aria-label="Herauszoomen" title="Herauszoomen"><Minus size={16} /></button><span>{Math.round(1000 / radius)}%</span><button type="button" onClick={() => onRadiusChange(Math.max(4, radius - 2))} disabled={radius <= 4} aria-label="Hineinzoomen" title="Hineinzoomen"><Plus size={16} /></button></div><button type="button" className="recenter-button" onClick={() => { const home = tiles.find((tile) => tile.village_id && ownVillageIds.includes(tile.village_id)); if (home) onMove(home.x, home.y) }}><LocateFixed size={15} /> Zu deinem Reich</button><span className="map-drag-hint">Ziehen zum Verschieben</span></div>
       </div>
       <div className="map-caption"><span>JEDES FELD IST FEST AN SEINE WELTKOORDINATE GEBUNDEN</span><span>{tiles.length} FELDER GELADEN</span></div>
+      <div className="map-legend" aria-label="Kartenlegende">
+        <div className="map-legend-group">
+          <span className="map-legend-heading">LANDSCHAFT</span>
+          <span className="map-legend-item"><i className="map-legend-swatch terrain-plains" /> Ebenen</span>
+          <span className="map-legend-item"><i className="map-legend-swatch terrain-forest" /> Wälder</span>
+          <span className="map-legend-item"><i className="map-legend-swatch terrain-hills" /> Hügel</span>
+          <span className="map-legend-item"><i className="map-legend-swatch terrain-marsh" /> Sümpfe</span>
+        </div>
+        <div className="map-legend-group">
+          <span className="map-legend-heading">SIEDLUNGEN</span>
+          <span className="map-legend-item"><i className="map-legend-swatch legend-own" /> Dein Reich</span>
+          <span className="map-legend-item"><i className="map-legend-swatch legend-allied" /> Allianz</span>
+          <span className="map-legend-item"><i className="map-legend-swatch legend-player" /> Spieler</span>
+          <span className="map-legend-item"><i className="map-legend-swatch legend-barbarian" /> Barbaren</span>
+        </div>
+      </div>
     </section>
   )
 }
