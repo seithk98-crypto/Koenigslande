@@ -20,6 +20,26 @@ type Props = {
 const TERRAIN_ICONS = { plains: null, forest: TreePine, hills: Mountain, marsh: Waves } as const
 
 
+function TerrainArtwork({ kind }: { kind: 'forest' | 'hills' | 'marsh' }) {
+  if (kind === 'forest') return <svg className="terrain-art terrain-art-forest" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M8 37 15 22l7 15H8Zm10 3 9-21 10 21H18Z" fill="#294a32" stroke="#b2b982" strokeWidth="1.2"/>
+    <path d="m11 29 4-9 5 9m7 2 7-15 7 15" fill="none" stroke="#7d9560" strokeWidth="1.4"/>
+    <path d="M14 37v5m15-2v5" stroke="#725638" strokeWidth="2.2"/>
+    <path d="M3 43h42" stroke="#d1c58a" strokeWidth="1" opacity=".6"/>
+  </svg>
+  if (kind === 'hills') return <svg className="terrain-art terrain-art-hills" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M2 39 15 16l9 14 8-20 14 29Z" fill="#837650" stroke="#e0c895" strokeWidth="1.2"/>
+    <path d="m8 39 8-14 6 9m4 5 6-23 8 16" fill="none" stroke="#d5c18f" strokeWidth="2"/>
+    <path d="m28 17 4-7 4 8-4-2Z" fill="#eee0b9"/>
+    <path d="M4 42h40" stroke="#6b6245" strokeWidth="2"/>
+  </svg>
+  return <svg className="terrain-art terrain-art-marsh" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M4 36q10-8 20 0t20 0v8H4Z" fill="#476d62" stroke="#b6c39a" strokeWidth="1"/>
+    <path d="M12 36V15m0 9-5-5m5 9 5-6m9 14V10m0 12-5-5m5 10 6-7m5 16V18m0 9-4-5" fill="none" stroke="#d0c88e" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M4 40q8-4 16 0t24 0" fill="none" stroke="#a8c4a0" strokeWidth="1.5"/>
+  </svg>
+}
+
 function SettlementArtwork({ kind }: { kind: 'own' | 'barbarian' | 'allied' | 'player' }) {
   const common = { viewBox: '0 0 48 48', 'aria-hidden': true as const, focusable: false as const }
   if (kind === 'own') return <svg {...common}>
@@ -140,7 +160,7 @@ export default function WorldMap({
                   backgroundSize: `${(201 / boardSize) * 100}% ${(201 / boardSize) * 100}%`,
                   backgroundRepeat: 'no-repeat',
                 }} onClick={() => onSelectTile(tile)} title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`} aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`} aria-pressed={selected}>
-                {tile.village_id ? <><span className="settlement-marker">{<SettlementArtwork kind={isOwnVillage ? 'own' : tile.is_barbarian ? 'barbarian' : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? 'allied' : 'player'} />}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainIcon className="terrain-mark" size={13} /> : null}
+                {tile.village_id ? <><span className="settlement-marker">{<SettlementArtwork kind={isOwnVillage ? 'own' : tile.is_barbarian ? 'barbarian' : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? 'allied' : 'player'} />}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainArtwork kind={tile.terrain as 'forest' | 'hills' | 'marsh'} /> : null}
                 <span className="tile-coordinate">{tile.x}|{tile.y}</span>
               </button>
             })}
