@@ -39,13 +39,26 @@ const INK: Rgb = [48, 40, 28]
 /* Kartenausschnitt                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Spitze Sechsecke („pointy top“), Feldbreite = 1 Einheit. Ungerade Weltzeilen sind um ½ Feld nach rechts versetzt. */
+export const HEX_R = 1 / Math.sqrt(3)
+/** Zeilenabstand: 1,5 · Umkreisradius. */
+export const HEX_ROW = 1.5 * HEX_R
+
+/** Zeilenparität nach Weltkoordinate y (nicht nach Bildschirmzeile): bleibt beim Verschieben stabil. */
+export function rowParity(y: number) {
+  return ((y % 2) + 2) % 2
+}
+
 export type BoardGeometry = {
-  /** Weltkoordinate x der ersten Spalte (Feldmitte). */
+  /** Weltkoordinate x der ersten Spalte (Feldmitte, gerade Zeile). */
   originX: number
   /** Weltkoordinate y der obersten Zeile (Feldmitte). */
   topY: number
   /** Anzahl Spalten = Zeilen. */
   size: number
+  /** Breite/Höhe des Ausschnitts in Feldbreiten. */
+  width: number
+  height: number
 }
 
 /**
@@ -53,20 +66,30 @@ export type BoardGeometry = {
  * verschoben. Felder außerhalb der Welt erscheinen als Meer.
  */
 export function boardGeometry(center: { x: number; y: number }, radius: number): BoardGeometry {
-  return { originX: center.x - radius, topY: center.y + radius, size: radius * 2 + 1 }
+  const size = radius * 2 + 1
+  return {
+    originX: center.x - radius,
+    topY: center.y + radius,
+    size,
+    width: size + 0.5,
+    height: 2 * HEX_R + (size - 1) * HEX_ROW,
+  }
 }
 
-/** 1-basierte Grid-Position eines Felds im Ausschnitt (für CSS-Grid). */
-export function tileCell(geo: BoardGeometry, x: number, y: number) {
-  return { column: x - geo.originX + 1, row: geo.topY - y + 1 }
+/** Mittelpunkt eines Felds in Feldbreiten-Einheiten (u nach rechts, v nach unten). */
+export function hexCenter(geo: BoardGeometry, x: number, y: number) {
+  return { u: x - geo.originX + 0.5 + 0.5 * rowParity(y), v: HEX_R + (geo.topY - y) * HEX_ROW }
 }
 
-/** Weltkoordinate → Pixel auf einer Zeichenfläche mit `tilePx` Pixeln je Feld. */
+/** Weltkoordinate → Pixel. Nicht ganzzahlige Werte liegen relativ zur Feldmitte (Dekoration). */
 export function worldToBoard(geo: BoardGeometry, wx: number, wy: number, tilePx: number) {
-  return { px: (wx - geo.originX + 0.5) * tilePx, py: (geo.topY - wy + 0.5) * tilePx }
+  const cx = Math.floor(wx + 0.5)
+  const cy = Math.floor(wy + 0.5)
+  const c = hexCenter(geo, cx, cy)
+  return { px: (c.u + (wx - cx) * 0.9) * tilePx, py: (c.v - (wy - cy) * HEX_ROW * 0.95) * tilePx }
 }
 
-/** Zeichenmaßstäbe: Feldgröße des Endbilds und Auflösung des Bodens. */
+/** Zeichenmaßstäbe: Feldbreite des Endbilds und Auflösung des Bodens (Pixel je Feldbreite). */
 export function boardScales(size: number) {
   const tilePx = Math.min(96, Math.max(28, Math.round(720 / size)))
   const groundPxPerTile = Math.min(40, Math.max(12, Math.round(560 / size)))
@@ -125,29 +148,51 @@ export type GroundImage = { width: number; height: number; data: Uint8ClampedArr
  * Weltkoordinaten, nicht am Bildschirm.
  */
 export function renderGround(geo: BoardGeometry, pxPerTile: number, lookup: TerrainLookup): GroundImage {
-  const width = geo.size * pxPerTile
-  const height = geo.size * pxPerTile
+  const width = Math.ceil(geo.width * pxPerTile)
+  const height = Math.ceil(geo.height * pxPerTile)
   const data = new Uint8ClampedArray(width * height * 4)
   const weights = new Float32Array(5)
   const colors = TERRAIN_ORDER.map((terrain) => GROUND_PALETTE[terrain])
+  const SOFTNESS = 9
 
   for (let j = 0; j < height; j += 1) {
-    const wy = geo.topY + 0.5 - (j + 0.5) / pxPerTile
+    const v = (j + 0.5) / pxPerTile
+    // Rauschen hängt an Weltkoordinaten: gy verschiebt sich pro Zeile um genau HEX_ROW.
+    const gy = geo.topY * HEX_ROW - v
     for (let i = 0; i < width; i += 1) {
-      const wx = geo.originX - 0.5 + (i + 0.5) / pxPerTile
+      const u = (i + 0.5) / pxPerTile
+      const gx = u + geo.originX
 
-      const ux = wx + (fbm(wx * 0.9, wy * 0.9, 11, 2) - 0.5) * 0.95
-      const uy = wy + (fbm(wx * 0.9 + 40, wy * 0.9 + 17, 23, 2) - 0.5) * 0.95
-      const x0 = Math.floor(ux)
-      const y0 = Math.floor(uy)
-      const tx = smoothstep(0.25, 0.75, ux - x0)
-      const ty = smoothstep(0.25, 0.75, uy - y0)
+      const wu = u + (fbm(gx * 0.9, gy * 0.9, 11, 2) - 0.5) * 0.6
+      const wv = v + (fbm(gx * 0.9 + 40, gy * 0.9 + 17, 23, 2) - 0.5) * 0.6
+
+      // Die sechs nächstliegenden Felder (3 Zeilen × 2 Spalten) und ihre Entfernungen.
+      const row0 = Math.round((wv - HEX_R) / HEX_ROW)
+      let dMin = Infinity
+      const dist: number[] = []
+      const terr: number[] = []
+      for (let rr = row0 - 1; rr <= row0 + 1; rr += 1) {
+        const y = geo.topY - rr
+        const par = rowParity(y)
+        const col = Math.floor(wu - 0.5 - 0.5 * par)
+        const cv = HEX_R + rr * HEX_ROW
+        for (let c = col; c <= col + 1; c += 1) {
+          const cu = c + 0.5 + 0.5 * par
+          const d = Math.hypot(wu - cu, wv - cv)
+          if (d < dMin) dMin = d
+          dist.push(d)
+          terr.push(TERRAIN_INDEX[lookup(geo.originX + c, y)])
+        }
+      }
 
       weights.fill(0)
-      weights[TERRAIN_INDEX[lookup(x0, y0)]] += (1 - tx) * (1 - ty)
-      weights[TERRAIN_INDEX[lookup(x0 + 1, y0)]] += tx * (1 - ty)
-      weights[TERRAIN_INDEX[lookup(x0, y0 + 1)]] += (1 - tx) * ty
-      weights[TERRAIN_INDEX[lookup(x0 + 1, y0 + 1)]] += tx * ty
+      let total = 0
+      for (let k = 0; k < dist.length; k += 1) {
+        const w = Math.exp(-(dist[k] - dMin) * SOFTNESS)
+        weights[terr[k]] += w
+        total += w
+      }
+      for (let t = 0; t < 5; t += 1) weights[t] /= total
 
       let r = 0
       let g = 0
@@ -164,9 +209,9 @@ export function renderGround(geo: BoardGeometry, pxPerTile: number, lookup: Terr
         if (weight > strongest) strongest = weight
       }
 
-      const patches = fbm(wx * 0.35, wy * 0.35, 5, 2)
-      const leafy = fbm(wx * 2.6, wy * 2.6, 31, 2)
-      const strokes = valueNoise(wx * 11, wy * 2.4, 9)
+      const patches = fbm(gx * 0.35, gy * 0.35, 5, 2)
+      const leafy = fbm(gx * 2.6, gy * 2.6, 31, 2)
+      const strokes = valueNoise(gx * 11, gy * 2.4, 9)
       const grain = hash01(i, j, 7)
       let light = 0.9 + 0.2 * patches
       light *= 1 + (leafy - 0.5) * mottle * 2

@@ -8,7 +8,7 @@
  */
 import type { WorldTile } from '../types.ts'
 import {
-  WORLD_MAX, WORLD_MIN, boardGeometry, boardScales, buildScene, createTerrainLookup, layoutVillage,
+  HEX_R, WORLD_MAX, WORLD_MIN, boardGeometry, boardScales, buildScene, createTerrainLookup, hexCenter, layoutVillage,
   renderGround, villageTier, worldToBoard,
   type BoardGeometry, type Decor, type Rgb, type VillageKind,
 } from './landscapeScene.ts'
@@ -51,8 +51,8 @@ function lineWidth(unit: number) {
 export function paintLandscape(canvas: HTMLCanvasElement, input: PaintInput) {
   const geo = boardGeometry(input.center, input.radius)
   const { tilePx, groundPxPerTile } = boardScales(geo.size)
-  canvas.width = geo.size * tilePx
-  canvas.height = geo.size * tilePx
+  canvas.width = Math.ceil(geo.width * tilePx)
+  canvas.height = Math.ceil(geo.height * tilePx)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas wird von diesem Browser nicht unterstützt.')
 
@@ -69,7 +69,7 @@ export function paintLandscape(canvas: HTMLCanvasElement, input: PaintInput) {
   ctx.drawImage(groundCanvas, 0, 0, canvas.width, canvas.height)
 
   paintSeaMarks(ctx, geo, tilePx)
-  paintGrid(ctx, geo, tilePx)
+  paintHexGrid(ctx, geo, tilePx)
 
   for (const item of buildScene(input.tiles, input.ownVillageIds, input.ownAllianceTag)) {
     if (item.type === 'decor') {
@@ -100,8 +100,9 @@ function paintSeaMarks(ctx: CanvasRenderingContext2D, geo: BoardGeometry, tilePx
       const y = geo.topY - row
       if (x >= WORLD_MIN && x <= WORLD_MAX && y >= WORLD_MIN && y <= WORLD_MAX) continue
       if (hash01(x, y, 55) > 0.55) continue
-      const cx = (column + 0.2 + hash01(x, y, 56) * 0.6) * tilePx
-      const cy = (row + 0.2 + hash01(x, y, 57) * 0.6) * tilePx
+      const c = hexCenter(geo, x, y)
+      const cx = (c.u - 0.3 + hash01(x, y, 56) * 0.6) * tilePx
+      const cy = (c.v - 0.2 + hash01(x, y, 57) * 0.4) * tilePx
       ctx.beginPath()
       ctx.arc(cx, cy, tilePx * 0.16, Math.PI * 1.1, Math.PI * 1.9)
       ctx.stroke()
@@ -113,28 +114,29 @@ function paintSeaMarks(ctx: CanvasRenderingContext2D, geo: BoardGeometry, tilePx
   ctx.restore()
 }
 
-/** Sehr feines Orientierungsraster: eine gestrichelte Linie je 10 Felder. */
-function paintGrid(ctx: CanvasRenderingContext2D, geo: BoardGeometry, tilePx: number) {
+/** Feine Sechseckkanten über alle Felder des Ausschnitts, in einem Pfad für gute Performance. */
+function paintHexGrid(ctx: CanvasRenderingContext2D, geo: BoardGeometry, tilePx: number) {
   ctx.save()
-  ctx.strokeStyle = 'rgba(52, 40, 24, 0.14)'
-  ctx.lineWidth = 1
-  ctx.setLineDash([tilePx * 0.22, tilePx * 0.3])
-  for (let index = 0; index <= geo.size; index += 1) {
-    const x = geo.originX - 0.5 + index
-    if (Math.round(x + 0.5) % 10 === 0 && Number.isInteger(x + 0.5)) {
-      ctx.beginPath()
-      ctx.moveTo(index * tilePx, 0)
-      ctx.lineTo(index * tilePx, geo.size * tilePx)
-      ctx.stroke()
-    }
-    const y = geo.topY + 0.5 - index
-    if (Math.round(y - 0.5) % 10 === 0 && Number.isInteger(y - 0.5)) {
-      ctx.beginPath()
-      ctx.moveTo(0, index * tilePx)
-      ctx.lineTo(geo.size * tilePx, index * tilePx)
-      ctx.stroke()
+  ctx.strokeStyle = 'rgba(52, 40, 24, 0.16)'
+  ctx.lineWidth = Math.max(1, tilePx / 40)
+  ctx.beginPath()
+  const r = HEX_R * tilePx
+  const half = tilePx / 2
+  for (let row = 0; row < geo.size; row += 1) {
+    for (let column = 0; column < geo.size; column += 1) {
+      const c = hexCenter(geo, geo.originX + column, geo.topY - row)
+      const cx = c.u * tilePx
+      const cy = c.v * tilePx
+      ctx.moveTo(cx, cy - r)
+      ctx.lineTo(cx + half, cy - r / 2)
+      ctx.lineTo(cx + half, cy + r / 2)
+      ctx.lineTo(cx, cy + r)
+      ctx.lineTo(cx - half, cy + r / 2)
+      ctx.lineTo(cx - half, cy - r / 2)
+      ctx.closePath()
     }
   }
+  ctx.stroke()
   ctx.restore()
 }
 

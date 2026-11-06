@@ -148,3 +148,21 @@
     transition: none;
   }
 }
+
+/* ---- Sechseckfelder ---- */
+.landscape-hit { display: block; }
+.landscape-tile {
+  position: absolute;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.landscape-tile:hover { box-shadow: none; background: rgba(255, 244, 205, 0.22); }
+.landscape-tile:focus-visible { outline: none; background: rgba(243, 220, 146, 0.4); }
+.landscape-tile.is-selected { box-shadow: none; background: rgba(255, 238, 180, 0.14); }
+.landscape-coordinate { right: auto; bottom: 14%; left: 50%; transform: translateX(-50%); }
+.landscape-overlay { position: absolute; inset: 0; pointer-events: none; }
+.landscape-selection { position: absolute; transform: translate(-50%, -50%); overflow: visible; filter: drop-shadow(0 0 2px rgba(38, 28, 14, 0.8)); }
+.landscape-selection polygon { fill: none; stroke: #f3dc92; stroke-width: 5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.landscape-marker { position: absolute; width: 0; height: 0; }
+.landscape-marker .landscape-label { top: 0.9em; }
+.landscape-marker .landscape-movement { top: -1.9em; }
+.landscape-marker .landscape-label { max-width: none; }

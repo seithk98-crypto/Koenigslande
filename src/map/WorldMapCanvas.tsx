@@ -3,7 +3,7 @@ import {
 } from 'react'
 import type { WorldTile } from '../types.ts'
 import { BANNER_COLORS, paintLandscape } from './landscapePainter.ts'
-import { GROUND_PALETTE, WORLD_MAX, WORLD_MIN, boardGeometry, tileCell, villageKind, type Rgb } from './landscapeScene.ts'
+import { GROUND_PALETTE, HEX_R, HEX_ROW, WORLD_MAX, WORLD_MIN, boardGeometry, hexCenter, villageKind, type Rgb } from './landscapeScene.ts'
 import { loadSpriteAtlas, type SpriteAtlas } from './spriteAtlas.ts'
 import './landscape.css'
 
@@ -102,16 +102,16 @@ export default function WorldMapCanvas({
     suppressClick.current = true
     window.setTimeout(() => { suppressClick.current = false }, 0)
 
-    const tileCss = viewport.clientWidth / geo.size
+    const tileCss = viewport.clientWidth / geo.width
     const stepX = Math.round(-(event.clientX - current.startX) / tileCss)
-    const stepY = Math.round((event.clientY - current.startY) / tileCss)
+    const stepY = Math.round((event.clientY - current.startY) / (tileCss * HEX_ROW))
     const next = { x: clampWorld(center.x + stepX), y: clampWorld(center.y + stepY) }
     if (next.x === center.x && next.y === center.y) {
       setOffset({ x: 0, y: 0, animate: true })
       return
     }
     // Erst sanft auf das nächste Feldraster einrasten, dann den neuen Ausschnitt laden.
-    setOffset({ x: (center.x - next.x) * tileCss, y: (next.y - center.y) * tileCss, animate: true })
+    setOffset({ x: (center.x - next.x) * tileCss, y: (next.y - center.y) * tileCss * HEX_ROW, animate: true })
     settleTimer.current = window.setTimeout(() => onMove(next.x, next.y), SETTLE_MS)
   }
 
@@ -137,14 +137,19 @@ export default function WorldMapCanvas({
     onMove(x, y)
   }
 
-  const visibleTiles = tiles.filter((tile) => {
-    const cell = tileCell(geo, tile.x, tile.y)
-    return cell.column >= 1 && cell.column <= geo.size && cell.row >= 1 && cell.row <= geo.size
-  })
+  const visibleTiles = useMemo(
+    () => tiles.filter((tile) => Math.abs(tile.x - center.x) <= radius && Math.abs(tile.y - center.y) <= radius),
+    [tiles, center.x, center.y, radius],
+  )
+  const village = visibleTiles.filter((tile) => villageKind(tile, ownVillageIds, ownAllianceTag))
+  const pos = (x: number, y: number) => {
+    const c = hexCenter(geo, x, y)
+    return { left: `${(c.u / geo.width) * 100}%`, top: `${(c.v / geo.height) * 100}%` }
+  }
 
   return (
     <section className="map-view landscape-map">
-      <div className="view-kicker"><span>WELT I · DIE GRENZLANDE · LANDSCHAFTSANSICHT (PROTOTYP)</span><span>{tiles.length.toLocaleString('de-DE')} FELDER</span></div>
+      <div className="view-kicker"><span>WELT I · DIE GRENZLANDE · SECHSECKKARTE</span><span>{tiles.length.toLocaleString('de-DE')} FELDER</span></div>
       <div className="map-heading"><div><p className="eyebrow">DIE BEKANNTE WELT</p><h1>Weltkarte</h1></div><div className="map-heading-tools">
         <form className="map-coordinate-search" onSubmit={searchCoordinates} role="search" aria-label="Weltkoordinaten suchen">
           <label className="sr-only" htmlFor="landscape-coordinate-query">Koordinaten X, Y</label>
@@ -158,6 +163,7 @@ export default function WorldMapCanvas({
         <div className="map-frame-top"><span><i /> GEMEINSAME WELT · LIVE-DATEN</span><span>{atlas ? `SPRITES: ${atlas.manifest.name.toUpperCase()}` : 'HANDGEZEICHNETE LANDSCHAFT'}</span></div>
         <div
           className="map-viewport landscape-viewport"
+          style={{ aspectRatio: `${geo.width} / ${geo.height}` }}
           ref={viewportRef}
           onPointerDown={startDrag}
           onPointerMove={moveDrag}
@@ -170,26 +176,41 @@ export default function WorldMapCanvas({
             style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
           >
             <canvas ref={canvasRef} className="landscape-canvas" aria-hidden="true" data-testid="landscape-canvas" />
-            <div className="landscape-hit" style={{ gridTemplateColumns: `repeat(${geo.size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${geo.size}, minmax(0, 1fr))` }}>
+            <div className="landscape-hit">
               {visibleTiles.map((tile) => {
-                const cell = tileCell(geo, tile.x, tile.y)
                 const kind = villageKind(tile, ownVillageIds, ownAllianceTag)
                 const selected = selectedTile?.x === tile.x && selectedTile?.y === tile.y
+                const c = hexCenter(geo, tile.x, tile.y)
                 return (
                   <button
                     type="button"
                     key={`${tile.x}:${tile.y}`}
                     className={`landscape-tile${kind ? ` has-village kind-${kind}` : ''}${selected ? ' is-selected' : ''}`}
-                    style={{ gridColumnStart: cell.column, gridRowStart: cell.row }}
+                    style={{ left: `${((c.u - 0.5) / geo.width) * 100}%`, top: `${((c.v - HEX_R) / geo.height) * 100}%`, width: `${(1 / geo.width) * 100}%`, height: `${((2 * HEX_R) / geo.height) * 100}%` }}
                     onClick={() => { if (!suppressClick.current) onSelectTile(tile) }}
                     title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`}
                     aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`}
                     aria-pressed={selected}
                   >
-                    {kind && tile.has_movement && <span className="landscape-movement" aria-hidden="true">⇄</span>}
-                    {kind && (radius <= 12 || selected) && <span className={`landscape-label kind-${kind}`}>{tile.village_name}</span>}
                     <span className="landscape-coordinate" aria-hidden="true">{tile.x}|{tile.y}</span>
                   </button>
+                )
+              })}
+            </div>
+            <div className="landscape-overlay" aria-hidden="true">
+              {selectedTile && Math.abs(selectedTile.x - center.x) <= radius && Math.abs(selectedTile.y - center.y) <= radius && (
+                <svg className="landscape-selection" style={{ ...pos(selectedTile.x, selectedTile.y), width: `${(1 / geo.width) * 100}%`, height: `${((2 * HEX_R) / geo.height) * 100}%` }} viewBox="0 0 100 115.47" preserveAspectRatio="none">
+                  <polygon points="50,3 97,30 97,85.5 50,112.5 3,85.5 3,30" />
+                </svg>
+              )}
+              {village.map((tile) => {
+                const kind = villageKind(tile, ownVillageIds, ownAllianceTag)
+                const selected = selectedTile?.x === tile.x && selectedTile?.y === tile.y
+                return (
+                  <span key={`${tile.x}:${tile.y}`} className="landscape-marker" style={pos(tile.x, tile.y)}>
+                    {tile.has_movement && <span className="landscape-movement">⇄</span>}
+                    {(radius <= 12 || selected) && <span className={`landscape-label kind-${kind}`}>{tile.village_name}</span>}
+                  </span>
                 )
               })}
             </div>
