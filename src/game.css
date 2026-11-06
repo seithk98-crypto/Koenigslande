@@ -796,3 +796,155 @@ a { color: inherit; }
 .player-settlement .settlement-marker > svg {
   color: #ffe0a5;
 }
+
+
+/* =========================================
+   WORLD MAP – ILLUSTRATED MEDIEVAL PASS
+   Pure presentation layer: game coordinates and data stay untouched.
+   ========================================= */
+.map-frame {
+  padding: 5px;
+  border: 2px solid #6f512d;
+  background: linear-gradient(135deg,#3a291b,#9b7540 12%,#4a321e 22%,#b08b50 50%,#49311d 78%,#2b2118);
+  box-shadow: 0 12px 30px rgba(28,31,23,.24), inset 0 0 0 1px rgba(238,211,145,.42);
+}
+.map-frame-top {
+  min-height: 34px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid rgba(226,194,126,.28);
+  color: #ead9ad;
+  background: linear-gradient(90deg,#1b2b21,#405137 48%,#1b2b21);
+  font-family: Georgia,serif;
+  letter-spacing: 1.15px;
+}
+.map-viewport {
+  width: min(100%, 78vh, 900px);
+  border: 1px solid rgba(50,39,24,.72);
+  background:
+    radial-gradient(ellipse at 16% 22%,rgba(39,91,103,.88),transparent 25%),
+    radial-gradient(ellipse at 83% 72%,rgba(44,104,112,.82),transparent 22%),
+    linear-gradient(145deg,#8d9b67,#64794e 48%,#a59b69);
+  box-shadow: inset 0 0 28px rgba(30,39,25,.35);
+}
+.map-board { isolation: isolate; }
+.map-tile {
+  border: 1px solid rgba(54,61,36,.10);
+  color: #f7edcf;
+  overflow: hidden;
+  transition: filter .18s ease, box-shadow .18s ease;
+}
+.map-tile::before {
+  position:absolute; inset:0; z-index:0; content:""; pointer-events:none;
+  opacity:.78;
+  background:
+    radial-gradient(ellipse at 20% 22%,rgba(255,244,190,.18),transparent 42%),
+    radial-gradient(ellipse at 82% 78%,rgba(28,42,25,.18),transparent 45%),
+    repeating-linear-gradient(24deg,transparent 0 13px,rgba(245,231,181,.055) 14px,transparent 15px 27px);
+}
+.map-tile > * { z-index:1; }
+.terrain-plains {
+  background-color:#a8a06b;
+  background-image:
+    radial-gradient(ellipse at 22% 35%,#c4b77b 0 8%,transparent 30%),
+    radial-gradient(ellipse at 72% 72%,#778c50 0 10%,transparent 34%),
+    repeating-linear-gradient(32deg,transparent 0 8px,rgba(235,219,153,.16) 9px,transparent 11px 19px),
+    linear-gradient(145deg,#b8ad78,#7f8958);
+}
+.terrain-forest {
+  background-color:#496344;
+  background-image:
+    radial-gradient(circle at 18% 25%,#29472f 0 11%,#60794a 12%,transparent 20%),
+    radial-gradient(circle at 58% 24%,#345236 0 13%,#718052 14%,transparent 22%),
+    radial-gradient(circle at 38% 72%,#263f2d 0 15%,#59734a 16%,transparent 25%),
+    radial-gradient(circle at 84% 78%,#34543a 0 12%,#788657 13%,transparent 22%),
+    linear-gradient(135deg,#718257,#344d37);
+}
+.terrain-hills {
+  background-color:#a4936b;
+  background-image:
+    radial-gradient(ellipse at 22% 25%,#d0bd8b 0 10%,transparent 34%),
+    radial-gradient(ellipse at 70% 65%,#756849 0 15%,transparent 37%),
+    repeating-radial-gradient(ellipse at 48% 48%,transparent 0 7px,rgba(76,67,43,.22) 8px 9px,transparent 10px 17px),
+    linear-gradient(145deg,#c1ad7b,#817653);
+}
+.terrain-marsh {
+  background-color:#657c6b;
+  background-image:
+    radial-gradient(ellipse at 18% 25%,rgba(187,197,145,.55) 0 8%,transparent 28%),
+    radial-gradient(ellipse at 75% 70%,rgba(36,83,73,.72) 0 15%,transparent 38%),
+    repeating-linear-gradient(155deg,transparent 0 7px,rgba(212,218,171,.2) 8px,transparent 10px 17px),
+    linear-gradient(145deg,#89977a,#506c61);
+}
+.settlement-marker {
+  width:clamp(25px,3.4vw,40px);
+  border:2px solid #d8bd7d;
+  border-radius:3px 3px 7px 7px;
+  background:linear-gradient(145deg,#526943,#1e3024);
+  box-shadow:0 0 0 2px rgba(31,36,24,.82),0 4px 8px rgba(18,24,17,.55),inset 0 1px 3px rgba(255,255,255,.2);
+}
+.settlement-marker::before {
+  content:"";
+  position:absolute;
+  inset:-5px -3px auto;
+  height:5px;
+  border:1px solid rgba(240,216,157,.72);
+  background:linear-gradient(90deg,#72512e,#d2b16c,#72512e);
+  box-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+.settlement-marker > svg {
+  width:82%; height:82%;
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.65));
+  stroke-width:1.8;
+}
+.own-settlement .settlement-marker {
+  width:clamp(31px,4.1vw,48px);
+  color:#ffe7a2;
+  border-color:#f1d28a;
+  background:linear-gradient(145deg,#819451,#293e2b 70%);
+  box-shadow:0 0 0 2px #293b2a,0 0 0 5px rgba(238,203,119,.24),0 0 18px rgba(250,215,128,.72),0 5px 9px rgba(0,0,0,.55);
+}
+.allied-settlement .settlement-marker { border-color:#c4d89a; background:linear-gradient(145deg,#78935a,#294531); }
+.player-settlement .settlement-marker { border-color:#e1c18b; background:linear-gradient(145deg,#b18a54,#5b3d2b); }
+.barbarian-settlement .settlement-marker { border-color:#dc9979; background:linear-gradient(145deg,#a85b43,#512c29); box-shadow:0 0 0 2px #30251f,0 0 12px rgba(174,71,48,.48),0 4px 8px rgba(0,0,0,.55); }
+.settlement-name {
+  top:calc(50% + 21px);
+  padding:2px 7px;
+  border:1px solid #c6a96e;
+  border-radius:2px;
+  color:#f8edcf;
+  background:linear-gradient(90deg,rgba(35,43,29,.97),rgba(65,55,34,.97));
+  box-shadow:0 2px 6px rgba(0,0,0,.55);
+  font-family:Georgia,serif;
+  font-size:9px;
+  text-shadow:0 1px 2px #171b13;
+}
+.map-tile.selected {
+  z-index:5;
+  box-shadow:inset 0 0 0 3px #f3d98e,inset 0 0 20px rgba(255,225,146,.48);
+}
+.map-tile.selected::after {
+  position:absolute; inset:3px; z-index:4; content:""; pointer-events:none;
+  border:1px solid rgba(255,235,175,.9);
+  box-shadow:0 0 12px rgba(255,220,125,.55);
+}
+.map-axis { border-color:#b89a61; color:#f4e5bc; background:rgba(30,43,31,.88); box-shadow:0 2px 6px rgba(0,0,0,.3); }
+.map-coordinates { border:1px solid rgba(224,195,129,.6); color:#f5e7c3; background:rgba(29,43,31,.9); }
+.map-controls { border-color:#80613a; color:#e5d4aa; background:linear-gradient(90deg,#28382b,#49563c,#28382b); }
+.zoom-control { border-color:#9a7a49; background:#e8ddbd; }
+.recenter-button { border-color:#b69a62; color:#f1e3c2; background:rgba(255,255,255,.06); }
+.recenter-button:hover { color:#fff2cf; background:rgba(226,194,126,.16); }
+.map-caption { color:#80724f; }
+.map-legend {
+  border:1px solid #b7a477;
+  background:linear-gradient(135deg,rgba(248,241,220,.92),rgba(225,215,184,.9));
+  box-shadow:0 3px 10px rgba(43,39,26,.08);
+}
+.map-legend-heading { color:#80683e; }
+.map-legend-item { color:#4e503e; }
+@media (max-width:680px) {
+  .map-frame { padding:3px; }
+  .settlement-marker { width:clamp(18px,5vw,28px); }
+  .own-settlement .settlement-marker { width:clamp(22px,6vw,32px); }
+  .settlement-name { top:calc(50% + 15px); max-width:84px; font-size:7px; }
+}
