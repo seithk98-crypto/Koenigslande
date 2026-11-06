@@ -1,0 +1,16 @@
+.village-scene { margin: 0 0 20px; border: 1px solid rgba(87, 99, 66, 0.35); background: #f4f0e2; }
+.village-stage { position: relative; width: 100%; aspect-ratio: 800 / 520; overflow: hidden; background: #8fae62; }
+.village-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.village-hit { position: absolute; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: inherit; -webkit-tap-highlight-color: transparent; }
+.village-hit:hover { background: rgba(255, 244, 205, 0.18); }
+.village-hit:focus-visible { outline: 2px solid #f3dc92; outline-offset: -2px; }
+.village-tag {
+  position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); white-space: nowrap;
+  padding: 1px 6px; border: 1px solid rgba(56, 40, 20, 0.6); border-radius: 2px; color: #3a2a14;
+  background: rgba(244, 232, 196, 0.94); font: 10px/14px Georgia, serif; pointer-events: none;
+}
+.village-tag b { margin-left: 3px; color: #8a4a1c; }
+.village-hit.is-building .village-tag { background: rgba(250, 224, 150, 0.96); }
+.village-detail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 14px; font-size: 13px; color: #3f4a33; }
+.village-error { margin: 0; padding: 8px 14px; color: #8a3a2a; font-size: 12px; }
+@media (max-width: 640px) { .village-tag { font-size: 8px; line-height: 11px; padding: 0 3px; } }

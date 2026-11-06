@@ -1,0 +1,39 @@
+.map-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0 0;
+  color: #7d7a68;
+  font-size: 8px;
+  letter-spacing: 0.8px;
+}
+
+.map-mode-switch > span {
+  margin-right: 4px;
+}
+
+.map-mode-switch button {
+  padding: 6px 11px;
+  border: 1px solid rgba(87, 99, 66, 0.3);
+  border-radius: 3px;
+  color: #3f4a33;
+  background: #f4f0e2;
+  font-size: 11px;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.map-mode-switch button.selected {
+  border-color: rgba(87, 99, 66, 0.2);
+  color: #f4f0e4;
+  background: #40533a;
+}
+
+.map-mode-switch em {
+  flex-basis: 100%;
+  color: #8a3a2a;
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0;
+}

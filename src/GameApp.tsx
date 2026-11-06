@@ -8,7 +8,8 @@ import { supabase } from './lib/supabase'
 import type {
   BuildingCode, MovementOverview, UnitCode, Village, WorldTile,
 } from './types'
-import WorldMap from './WorldMap'
+import WorldMap from './map/WorldMapHost'
+import VillageScene from './village/VillageScene'
 
 const MultiplayerView = lazy(() => import('./MultiplayerView'))
 
@@ -778,6 +779,7 @@ export default function GameApp({ session }: Props) {
                   <button type="submit" className="dispatch-button" disabled={foundingAdditionalVillage}>{foundingAdditionalVillage ? 'Siedlungsplatz wird gesucht …' : 'Dorf gründen'}</button>
                 </form>
               </section>
+              <VillageScene village={village} upgrading={upgrading} onUpgrade={(code) => void startBuildingUpgrade(code)} />
               <p className="building-cost-legend">Ausbaukosten: Holz (H) · Lehm (L) · Eisen (E)</p>
               <div className="building-list">{Object.entries(BUILDINGS).map(([code, details]) => {
                 const buildingCode = code as BuildingCode
