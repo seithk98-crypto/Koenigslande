@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type PointerEvent } from 'react'
-import { ArrowLeftRight, Castle, LocateFixed, Minus, Mountain, Plus, TreePine, Waves, House, Shield, Swords } from 'lucide-react'
+import { ArrowLeftRight, LocateFixed, Minus, Mountain, Plus, TreePine, Waves } from 'lucide-react'
 import type { WorldTile } from './types'
 import { getTileGridPosition } from './worldMapModel'
 
@@ -18,6 +18,65 @@ type Props = {
 }
 
 const TERRAIN_ICONS = { plains: null, forest: TreePine, hills: Mountain, marsh: Waves } as const
+
+
+function TerrainArtwork({ kind }: { kind: 'forest' | 'hills' | 'marsh' }) {
+  if (kind === 'forest') return <svg className="terrain-art terrain-art-forest" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M8 37 15 22l7 15H8Zm10 3 9-21 10 21H18Z" fill="#294a32" stroke="#b2b982" strokeWidth="1.2"/>
+    <path d="m11 29 4-9 5 9m7 2 7-15 7 15" fill="none" stroke="#7d9560" strokeWidth="1.4"/>
+    <path d="M14 37v5m15-2v5" stroke="#725638" strokeWidth="2.2"/>
+    <path d="M3 43h42" stroke="#d1c58a" strokeWidth="1" opacity=".6"/>
+  </svg>
+  if (kind === 'hills') return <svg className="terrain-art terrain-art-hills" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M2 39 15 16l9 14 8-20 14 29Z" fill="#837650" stroke="#e0c895" strokeWidth="1.2"/>
+    <path d="m8 39 8-14 6 9m4 5 6-23 8 16" fill="none" stroke="#d5c18f" strokeWidth="2"/>
+    <path d="m28 17 4-7 4 8-4-2Z" fill="#eee0b9"/>
+    <path d="M4 42h40" stroke="#6b6245" strokeWidth="2"/>
+  </svg>
+  return <svg className="terrain-art terrain-art-marsh" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M4 36q10-8 20 0t20 0v8H4Z" fill="#476d62" stroke="#b6c39a" strokeWidth="1"/>
+    <path d="M12 36V15m0 9-5-5m5 9 5-6m9 14V10m0 12-5-5m5 10 6-7m5 16V18m0 9-4-5" fill="none" stroke="#d0c88e" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M4 40q8-4 16 0t24 0" fill="none" stroke="#a8c4a0" strokeWidth="1.5"/>
+  </svg>
+}
+
+function SettlementArtwork({ kind }: { kind: 'own' | 'barbarian' | 'allied' | 'player' }) {
+  const common = { viewBox: '0 0 48 48', 'aria-hidden': true as const, focusable: false as const }
+  if (kind === 'own') return <svg {...common}>
+    <path d="M5 39h38v5H5z" fill="#6d5130" stroke="#e0c486" strokeWidth="1.2" />
+    <path d="M8 22 24 9l16 13v17H8z" fill="#8c7953" stroke="#ead29a" strokeWidth="1.5" />
+    <path d="M5 23 24 6l19 17-3 3L24 12 8 26z" fill="#713d2d" stroke="#e9c27b" strokeWidth="1.4" />
+    <path d="M17 18h14v21H17z" fill="#c2a36a" stroke="#55452d" />
+    <path d="M20 21h8v7h-8z" fill="#344d3b" stroke="#e6cb8b" />
+    <path d="M21 32h6v7h-6z" fill="#503526" stroke="#e5c98d" />
+    <path d="M21 5V1h6v4M24 1v-2" stroke="#e8d39c" strokeWidth="1.6" />
+    <path d="M24 0h8l-4 4h-4z" fill="#a84d36" stroke="#e5c98d" strokeWidth=".8" />
+  </svg>
+  if (kind === 'barbarian') return <svg {...common}>
+    <path d="M5 40h38v4H5z" fill="#56372b" stroke="#d69b77" />
+    <path d="m8 23 15-13 17 13v17H8z" fill="#76503a" stroke="#e2b08a" strokeWidth="1.4" />
+    <path d="m5 24 18-17 20 17-3 3L23 12 8 27z" fill="#71352e" stroke="#e6b38d" />
+    <path d="M17 27h13v13H17z" fill="#3a3028" stroke="#c88b69" />
+    <path d="m13 16 5-8m17 8-5-8" stroke="#e0c49a" strokeWidth="2" />
+    <path d="M19 31h9" stroke="#d6a07d" strokeWidth="2" />
+  </svg>
+  if (kind === 'allied') return <svg {...common}>
+    <path d="M5 40h38v4H5z" fill="#52613b" stroke="#c6d69a" />
+    <path d="M8 23 24 10l16 13v17H8z" fill="#71865a" stroke="#d6e2ad" strokeWidth="1.4" />
+    <path d="m5 24 19-17 19 17-3 3L24 12 8 27z" fill="#486c48" stroke="#d8e4ae" />
+    <path d="M18 26h12v14H18z" fill="#354d37" stroke="#d7dfa8" />
+    <path d="M24 13 34 17v8c0 7-5 11-10 13-5-2-10-6-10-13v-8z" fill="#b5c982" stroke="#e7e9bd" strokeWidth="1.2" />
+    <path d="m20 25 3 3 6-7" fill="none" stroke="#344d35" strokeWidth="2.4" />
+  </svg>
+  return <svg {...common}>
+    <path d="M5 40h38v4H5z" fill="#68472d" stroke="#e0bd83" />
+    <path d="M8 23 24 10l16 13v17H8z" fill="#a47b4c" stroke="#e8c995" strokeWidth="1.4" />
+    <path d="m5 24 19-17 19 17-3 3L24 12 8 27z" fill="#8c4e37" stroke="#edc58d" />
+    <path d="M17 27h14v13H17z" fill="#55402d" stroke="#e2c18a" />
+    <path d="M20 20h8v7h-8z" fill="#354d43" stroke="#e7cb96" />
+    <path d="M22 32h4v8h-4z" fill="#c19a61" />
+  </svg>
+}
 
 export default function WorldMap({
   tiles, center, radius, loading, error, ownVillageIds, ownAllianceTag, selectedTile,
@@ -101,7 +160,7 @@ export default function WorldMap({
                   backgroundSize: `${(201 / boardSize) * 100}% ${(201 / boardSize) * 100}%`,
                   backgroundRepeat: 'no-repeat',
                 }} onClick={() => onSelectTile(tile)} title={`${tile.village_name ?? tile.terrain} (${tile.x} | ${tile.y})`} aria-label={`${tile.village_name ?? tile.terrain}, Koordinaten ${tile.x} ${tile.y}`} aria-pressed={selected}>
-                {tile.village_id ? <><span className="settlement-marker">{isOwnVillage ? <Castle size={20} /> : tile.is_barbarian ? <Swords size={17} /> : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? <Shield size={17} /> : <House size={17} />}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainIcon className="terrain-mark" size={13} /> : null}
+                {tile.village_id ? <><span className="settlement-marker">{<SettlementArtwork kind={isOwnVillage ? 'own' : tile.is_barbarian ? 'barbarian' : tile.alliance_tag && tile.alliance_tag === ownAllianceTag ? 'allied' : 'player'} />}{tile.has_movement && <ArrowLeftRight className="movement-mark" size={10} />}</span>{radius <= 12 && <span className="settlement-name">{tile.village_name}</span>}</> : TerrainIcon ? <TerrainArtwork kind={tile.terrain as 'forest' | 'hills' | 'marsh'} /> : null}
                 <span className="tile-coordinate">{tile.x}|{tile.y}</span>
               </button>
             })}
